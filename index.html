@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🏆 HQ WORLDCUP 🏆</title>
     
-    <!-- 필수 라이브러리 로드 -->
+    <!-- 필수 라이브러리 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
     
-    <!-- Firebase SDK 로드 -->
+    <!-- Firebase 설정 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
@@ -38,7 +38,7 @@
             };
             window.dispatchEvent(new Event('fb-ready'));
         } catch (e) {
-            console.error("Firebase Init Error:", e);
+            console.error("Firebase 초기화 에러:", e);
         }
     </script>
 
@@ -56,7 +56,11 @@
         .twitter-tweet-rendered { width: 100% !important; max-width: 500px !important; margin: 0 !important; border: none !important; box-shadow: none !important; }
         iframe { border-radius: 12px !important; border: none !important; background-color: transparent !important; }
         
-        .game-container { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; }
+        /* 스크롤 가독성을 위한 컨테이너 */
+        .app-main-wrapper { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        
+        .game-container { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; z-index: 10; }
         .bottom-safe-padding { padding-bottom: calc(var(--safe-bottom) + 35px); }
 
         input, textarea { font-size: 16px !important; color: black !important; }
@@ -71,13 +75,13 @@
     </style>
 </head>
 <body class="bg-white">
-    <div id="root" class="flex items-center justify-center h-full text-neutral-300 font-bold">
-        시스템 연결 중...
+    <div id="root" class="flex items-center justify-center h-full text-neutral-300 font-bold uppercase tracking-widest text-xs">
+        CONNECTING TO HQ SYSTEM...
     </div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        const APP_PATH_KEY = 'twitter-video-wc-pro';
+        const DB_ID = 'twitter-video-wc-pro';
 
         const Icon = ({ name, size = 24, className = "", color = "#000000" }) => {
             const iconRef = useRef(null);
@@ -102,27 +106,28 @@
             const [adminPassword, setAdminPassword] = useState('');
             const [bulkText, setBulkText] = useState('');
             const [editingId, setEditingId] = useState(null);
+            const [wcType, setWcType] = useState('video');
             const [rankingWc, setRankingWc] = useState(null);
 
             useEffect(() => {
-                const initFirebaseApp = async () => {
+                const initApp = async () => {
                     if (!window.fb) return;
                     try {
                         const { auth, signInAnonymously, db, collection, onSnapshot } = window.fb;
                         await signInAnonymously(auth);
                         
-                        const wcRef = collection(db, 'artifacts', APP_PATH_KEY, 'public', 'data', 'worldcups');
+                        const wcRef = collection(db, 'artifacts', DB_ID, 'public', 'data', 'worldcups');
                         onSnapshot(wcRef, (snapshot) => {
                             const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                             setWorldcups(docs);
                             setLoading(false);
                         });
-                    } catch (e) { console.error("Data Load Error:", e); }
+                    } catch (e) { console.error("Firebase Error:", e); }
                 };
 
-                if (window.fb) initFirebaseApp();
-                else window.addEventListener('fb-ready', initFirebaseApp);
+                if (window.fb) initApp();
+                else window.addEventListener('fb-ready', initApp);
 
                 const script = document.createElement('script');
                 script.src = "https://platform.twitter.com/widgets.js";
@@ -131,7 +136,7 @@
             }, []);
 
             useEffect(() => {
-                if (window.twttr && window.twttr.widgets) {
+                if (selectedWc?.type === 'video' && window.twttr && window.twttr.widgets) {
                     const timer = setTimeout(() => window.twttr.widgets.load(), 150);
                     return () => clearTimeout(timer);
                 }
@@ -157,10 +162,10 @@
                 else if (count === 2) setRoundName("결승전");
             };
 
-            const updateWinCountInDB = async (winnerVideo) => {
+            const updateWinRecord = async (winnerVideo) => {
                 const { db, doc, updateDoc } = window.fb;
                 try {
-                    const wcRef = doc(db, 'artifacts', APP_PATH_KEY, 'public', 'data', 'worldcups', selectedWc.id);
+                    const wcRef = doc(db, 'artifacts', DB_ID, 'public', 'data', 'worldcups', selectedWc.id);
                     const updatedEntries = selectedWc.entries.map(entry => {
                         if (entry.url === winnerVideo.url) {
                             return { ...entry, winCount: (entry.winCount || 0) + 1 };
@@ -168,9 +173,8 @@
                         return entry;
                     });
                     await updateDoc(wcRef, { entries: updatedEntries });
-                    const updatedChamp = updatedEntries.find(e => e.url === winnerVideo.url);
-                    setChampion(updatedChamp);
-                } catch (e) { console.error("Win Update Fail:", e); }
+                    setChampion(updatedEntries.find(e => e.url === winnerVideo.url));
+                } catch (e) { console.error("Win Count fail:", e); }
             };
 
             const selectWinner = (winner) => {
@@ -181,71 +185,101 @@
                 } else {
                     if (nextWinners.length === 1) {
                         setChampion(nextWinners[0]);
-                        updateWinCountInDB(nextWinners[0]);
+                        updateWinRecord(nextWinners[0]);
                     } else {
                         initRound(nextWinners);
                     }
                 }
             };
 
-            const handleDeleteWorldcup = async (id) => {
+            const handleDelete = async (id) => {
                 if (!window.confirm("이 월드컵을 삭제하시겠습니까? 🗑️")) return;
                 const { db, doc, deleteDoc } = window.fb;
                 try {
-                    const docRef = doc(db, 'artifacts', APP_PATH_KEY, 'public', 'data', 'worldcups', id);
-                    await deleteDoc(docRef);
+                    await deleteDoc(doc(db, 'artifacts', DB_ID, 'public', 'data', 'worldcups', id));
                     alert("삭제되었습니다.");
-                } catch (e) {
-                    console.error("Delete Error:", e);
-                    alert("삭제 오류가 발생했습니다.");
-                }
+                } catch (e) { alert("삭제 실패"); }
             };
 
-            const VideoPlayerSlot = ({ video, playerKey }) => (
-                <div key={`${playerKey}-${video.url}`} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
-                    <div className="py-1.5 px-4 text-center shrink-0">
-                        <h3 className="text-[12px] font-bold truncate leading-none text-black-force">{video.title}</h3>
-                    </div>
-                    <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
-                        <div className="w-full aspect-square flex items-center justify-center relative bg-neutral-50 border border-neutral-100 rounded-2xl overflow-hidden shadow-sm">
-                            <div className="w-full scale-[0.82] origin-center flex justify-center">
-                                <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="500" data-chrome="noheader nofooter noborders transparent">
-                                    <a href={video.url.replace('x.com', 'twitter.com')}></a>
-                                </blockquote>
+            const ContentRenderer = ({ item, type, playerKey }) => {
+                const boxStyle = "w-full aspect-square flex items-center justify-center relative bg-neutral-50 border border-neutral-100 rounded-2xl overflow-hidden shadow-sm";
+                
+                if (type === 'image') {
+                    return (
+                        <div key={`${playerKey}-${item.url}`} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+                            <div className="py-1.5 px-4 text-center shrink-0"><h3 className="text-[12px] font-bold truncate leading-none text-black-force">{item.title}</h3></div>
+                            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
+                                <div className={boxStyle}>
+                                    <img src={item.url} className="w-full h-full object-contain" alt={item.title} />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (type === 'text') {
+                    return (
+                        <div key={`${playerKey}-${item.url}`} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+                            <div className="py-1.5 px-4 text-center shrink-0"><h3 className="text-[12px] font-bold truncate leading-none text-black-force opacity-20">{item.title}</h3></div>
+                            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
+                                <div className={`${boxStyle} p-8 bg-neutral-50 border-dashed border-2`}>
+                                    <p className="text-black-force font-black text-lg text-center leading-relaxed whitespace-pre-wrap">{item.url}</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div key={`${playerKey}-${item.url}`} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden text-black-force">
+                        <div className="py-1.5 px-4 text-center shrink-0"><h3 className="text-[12px] font-bold truncate leading-none">{item.title}</h3></div>
+                        <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
+                            <div className={boxStyle}>
+                                <div className="w-full scale-[0.82] origin-center flex justify-center">
+                                    <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="500" data-chrome="noheader nofooter noborders transparent">
+                                        <a href={item.url.replace('x.com', 'twitter.com')}></a>
+                                    </blockquote>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            );
+                );
+            };
+
+            // --- Render Logic ---
 
             if (view === 'home') return (
-                <div className="h-full flex flex-col px-4 py-6 bg-white overflow-y-auto relative">
-                    <header className="py-10 text-center flex flex-col items-center shrink-0">
-                        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 border-2 border-neutral-100 shadow-2xl overflow-hidden">
-                            <img src="https://pbs.twimg.com/media/G_gkEzbbMAAW4AX?format=jpg&name=large" alt="Main" className="w-full h-full object-cover" />
-                        </div>
-                        <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-tight mb-1 text-black-force">🏆 HQ WORLDCUP 🏆</h1>
-                        <p className="text-neutral-400 text-[9px] font-bold tracking-widest uppercase opacity-40 leading-none">Choose your tournament</p>
-                    </header>
-
-                    {/* 버튼 가로 길이를 위해 max-w 확장 */}
-                    <div className="flex-1 space-y-2 pb-32 max-w-xl mx-auto w-full">
-                        {loading ? <div className="text-center py-20 font-bold text-neutral-200 tracking-widest animate-pulse">CONNECTING...</div> :
-                         worldcups.map(wc => (
-                            <div key={wc.id} className="flex gap-2 items-center">
-                                <button onClick={() => startTournament(wc)} className="flex-1 h-14 bg-white px-6 rounded-2xl border border-neutral-100 shadow-sm flex items-center justify-between active:bg-neutral-50 transition-all overflow-hidden">
-                                    <div className="text-left truncate mr-4 text-black-force">
-                                        <h2 className="text-sm font-black truncate leading-tight">{wc.title}</h2>
-                                        <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-tighter mt-0.5">{wc.entries.length} VIDEOS</p>
-                                    </div>
-                                    <Icon name="play" color="#000000" size={16} className="shrink-0" />
-                                </button>
-                                <button onClick={() => setRankingWc(wc)} className="w-14 h-14 bg-neutral-50 border border-neutral-100 rounded-2xl flex flex-col items-center justify-center shadow-sm active:scale-90 transition-all shrink-0">
-                                    <span className="text-xs">🏆</span>
-                                    <span className="text-[7px] font-black mt-0.5 opacity-60 uppercase text-black-force">Record</span>
-                                </button>
+                <div className="app-main-wrapper bg-white">
+                    <div className="scroll-area px-4 py-6">
+                        <header className="py-10 text-center flex flex-col items-center shrink-0">
+                            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 border-2 border-neutral-100 shadow-2xl overflow-hidden">
+                                <img src="https://pbs.twimg.com/media/G_gkEzbbMAAW4AX?format=jpg&name=large" alt="Visual" className="w-full h-full object-cover" />
                             </div>
-                        ))}
+                            <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-tight mb-1 text-black-force">🏆 HQ WORLDCUP 🏆</h1>
+                            <p className="text-neutral-400 text-[9px] font-bold tracking-widest uppercase opacity-40 leading-none">Choose your tournament</p>
+                        </header>
+
+                        <div className="space-y-2 max-w-2xl mx-auto w-full pb-40">
+                            {loading ? <div className="text-center py-20 font-bold text-neutral-200 animate-pulse tracking-widest uppercase">Connecting...</div> :
+                             worldcups.map(wc => (
+                                <div key={wc.id} className="flex gap-2 items-center text-black-force">
+                                    <button onClick={() => startTournament(wc)} className="flex-1 h-14 bg-white px-6 rounded-2xl border border-neutral-100 shadow-sm flex items-center justify-between active:bg-neutral-50 transition-all overflow-hidden">
+                                        <div className="text-left truncate mr-4 flex items-center gap-3">
+                                            <span className="text-lg opacity-40 shrink-0">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
+                                            <div className="truncate">
+                                                <h2 className="text-sm font-black truncate leading-tight">{wc.title}</h2>
+                                                <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-tighter mt-0.5">{wc.entries.length} ITEMS</p>
+                                            </div>
+                                        </div>
+                                        <Icon name="play" color="#000000" size={16} className="shrink-0" />
+                                    </button>
+                                    <button onClick={() => setRankingWc(wc)} className="w-14 h-14 bg-neutral-50 border border-neutral-100 rounded-2xl flex flex-col items-center justify-center shadow-sm active:scale-90 transition-all shrink-0">
+                                        <span className="text-sm">🏆</span>
+                                        <span className="text-[7px] font-black mt-0.5 opacity-60 uppercase text-black-force tracking-tighter">Record</span>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {rankingWc && (
@@ -258,11 +292,11 @@
                                     </div>
                                     <button onClick={() => setRankingWc(null)} className="p-2 opacity-30"><Icon name="x" size={24}/></button>
                                 </header>
-                                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-black-force">
                                     {[...rankingWc.entries]
                                         .sort((a, b) => (b.winCount || 0) - (a.winCount || 0))
                                         .map((entry, idx) => (
-                                        <div key={idx} className="p-3 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100 text-black-force">
+                                        <div key={idx} className="p-3 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100">
                                             <div className="flex items-center gap-3 truncate text-left">
                                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] ${idx === 0 ? 'bg-yellow-400 white-text-only border-none' : 'bg-neutral-200 border-none'}`}>{idx + 1}</span>
                                                 <p className="font-bold text-xs truncate">{entry.title}</p>
@@ -285,66 +319,107 @@
             );
 
             if (view === 'admin_auth') return (
-                <div className="h-full flex flex-col items-center justify-center p-8 bg-white text-center">
+                <div className="h-full flex flex-col items-center justify-center p-8 bg-white text-center text-black-force">
                     <Icon name="lock" size={48} className="mb-6 opacity-10" />
-                    <h2 className="text-xl font-black mb-8 uppercase tracking-widest leading-none text-black-force">Admin</h2>
+                    <h2 className="text-xl font-black mb-8 uppercase tracking-widest leading-none">Admin Auth</h2>
                     <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && setView(adminPassword === '0000' ? 'admin' : 'admin_auth')} className="w-full max-w-xs border-b-2 border-neutral-100 py-4 text-center text-3xl tracking-[0.5em] outline-none focus:border-black transition-all bg-transparent text-black-force" placeholder="****" autoFocus />
-                    <button onClick={() => { if(adminPassword === '0000') setView('admin'); else alert('Error'); }} className="w-full max-w-xs bg-black py-4 rounded-xl active:scale-95 shadow-xl mt-8 border-none flex items-center justify-center"><span className="font-bold text-white white-text-only uppercase">ENTER</span></button>
-                    <button onClick={() => setView('home')} className="mt-8 font-bold underline opacity-20 text-xs text-center text-black-force">돌아가기</button>
+                    <button onClick={() => { if(adminPassword === '0000') setView('admin'); else alert('Password Fail'); }} className="w-full max-w-xs bg-black py-4 rounded-xl active:scale-95 shadow-xl mt-8 border-none flex items-center justify-center text-white font-bold uppercase">Enter</button>
+                    <button onClick={() => setView('home')} className="mt-8 font-bold underline opacity-20 text-xs text-center uppercase tracking-tighter">Back Home</button>
                 </div>
             );
 
             if (view === 'admin') return (
-                <div className="h-full flex flex-col bg-white overflow-hidden p-6 text-black-force">
-                    <header className="flex justify-between items-center mb-6 shrink-0 px-2 text-black-force">
-                        <button onClick={() => { setView('home'); setEditingId(null); setBulkText(''); }}><Icon name="arrow-left" /></button>
-                        <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest italic leading-none">Management</h1>
-                        <div className="w-10"></div>
-                    </header>
-                    <div className="flex-1 overflow-y-auto space-y-6 pb-20">
-                        <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-32 bg-neutral-50 border border-neutral-100 rounded-xl p-4 font-mono text-[10px] outline-none text-black-force" placeholder="월드컵제목, 영상제목, 링크..." />
-                        <button onClick={async (e) => {
-                            if(!bulkText.trim()) return;
-                            const btn = e.currentTarget; btn.disabled = true;
-                            const lines = bulkText.trim().split('\n').filter(l => l.trim());
-                            const title = lines[0].split(',')[0].trim();
-                            const entries = lines.map((l, i) => {
-                                const p = l.split(',').map(s => s.trim());
-                                return p.length >= 3 ? { id: i, title: p[1], url: p[2], winCount: 0 } : null;
-                            }).filter(Boolean);
-                            try {
-                                const { db, collection, addDoc, serverTimestamp, doc, updateDoc } = window.fb;
-                                if (editingId) {
-                                    await updateDoc(doc(db, 'artifacts', APP_PATH_KEY, 'public', 'data', 'worldcups', editingId), { title, entries });
-                                    alert("수정 완료! ✏️");
-                                } else {
-                                    await addDoc(collection(db, 'artifacts', APP_PATH_KEY, 'public', 'data', 'worldcups'), { title, entries, createdAt: serverTimestamp() });
-                                    alert("발행 성공! 🚀");
-                                }
-                                setBulkText(''); setEditingId(null); setView('home');
-                            } catch(err) { alert("저장 실패"); } finally { btn.disabled = false; }
-                        }} className="w-full bg-blue-600 py-4 rounded-xl shadow-xl border-none flex items-center justify-center">
-                            <span className="font-black text-white white-text-only uppercase leading-none">{editingId ? 'Edit Complete' : 'Publish New'}</span>
-                        </button>
+                <div className="app-main-wrapper bg-white text-black-force">
+                    {/* 관리자 전체 영역 스크롤 활성화 및 하단 여백 추가 */}
+                    <div className="scroll-area p-6 pb-60">
+                        <header className="flex justify-between items-center mb-8 shrink-0">
+                            <button onClick={() => { setView('home'); setEditingId(null); setBulkText(''); }}><Icon name="arrow-left" /></button>
+                            <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest italic leading-none">Management</h1>
+                            <div className="w-10"></div>
+                        </header>
                         
-                        <div className="space-y-2 pt-6 border-t border-neutral-100">
-                            <p className="text-[9px] font-black text-neutral-400 uppercase italic opacity-60 text-left">Created Items</p>
-                            {worldcups.map(wc => (
-                                <div key={wc.id} className="p-3 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100 shadow-sm text-black-force">
-                                    <span className="text-xs font-bold truncate flex-1 mr-4 text-left">{wc.title}</span>
-                                    <div className="flex gap-2 shrink-0">
-                                        <button onClick={() => { setBulkText(wc.entries.map(e => `${wc.title}, ${e.title}, ${e.url}`).join('\n')); setEditingId(wc.id); }} className="w-9 h-9 bg-white rounded-lg border border-neutral-200 flex items-center justify-center text-sm shadow-sm">✏️</button>
-                                        <button onClick={() => handleDeleteWorldcup(wc.id)} className="w-9 h-9 bg-white rounded-lg border border-neutral-200 flex items-center justify-center text-sm shadow-sm text-red-500">🗑️</button>
+                        <div className="w-full max-w-4xl mx-auto space-y-6">
+                            <div className="flex gap-2">
+                                {['video', 'image', 'text'].map(type => (
+                                    <button key={type} onClick={() => setWcType(type)} className={`flex-1 py-3 rounded-xl font-bold text-xs border-2 transition-all ${wcType === type ? 'border-black bg-black text-white white-text-only' : 'border-neutral-100 text-neutral-400 bg-neutral-50'}`}>
+                                        {type === 'video' ? '📹 영상' : type === 'image' ? '🖼️ 이미지' : '💬 대사'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <textarea 
+                                value={bulkText} 
+                                onChange={e => setBulkText(e.target.value)} 
+                                className="w-full h-[300px] bg-neutral-50 border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none text-black-force leading-relaxed shadow-inner" 
+                                placeholder={wcType === 'text' 
+                                    ? "형식:\n월드컵 타이틀\n대사 1\n대사 2\n대사 3\n..." 
+                                    : "형식:\n월드컵 타이틀\n항목 제목 1\n링크 1\n항목 제목 2\n링크 2\n..."} 
+                            />
+                            
+                            <button onClick={async (e) => {
+                                if(!bulkText.trim()) return;
+                                const btn = e.currentTarget; btn.disabled = true;
+                                const lines = bulkText.split('\n').map(l => l.trim()).filter(l => l !== "");
+                                if (lines.length < 2) { alert("정보가 부족합니다."); btn.disabled = false; return; }
+
+                                const title = lines[0];
+                                const entries = [];
+                                if (wcType === 'text') {
+                                    lines.slice(1).forEach((text, i) => {
+                                        entries.push({ id: i, title: text.substring(0, 15) + (text.length > 15 ? '...' : ''), url: text, winCount: 0 });
+                                    });
+                                } else {
+                                    for (let i = 1; i < lines.length; i += 2) {
+                                        if (lines[i] && lines[i+1]) {
+                                            entries.push({ id: entries.length, title: lines[i], url: lines[i+1], winCount: 0 });
+                                        }
+                                    }
+                                }
+
+                                try {
+                                    const { db, collection, addDoc, serverTimestamp, doc, updateDoc } = window.fb;
+                                    const payload = { title, entries, type: wcType };
+                                    if (editingId) {
+                                        await updateDoc(doc(db, 'artifacts', DB_ID, 'public', 'data', 'worldcups', editingId), payload);
+                                        alert("수정 완료! ✏️");
+                                    } else {
+                                        await addDoc(collection(db, 'artifacts', DB_ID, 'public', 'data', 'worldcups'), { ...payload, createdAt: serverTimestamp() });
+                                        alert("발행 성공! 🚀");
+                                    }
+                                    setBulkText(''); setEditingId(null); setView('home');
+                                } catch(err) { alert("저장 실패"); } finally { btn.disabled = false; }
+                            }} className="w-full bg-blue-600 py-4 rounded-xl shadow-xl border-none text-white font-black uppercase tracking-widest text-xs">
+                                {editingId ? 'Save Edits' : 'Publish Worldcup'}
+                            </button>
+
+                            <div className="space-y-2 pt-10 border-t border-neutral-100">
+                                <p className="text-[9px] font-black text-neutral-400 uppercase italic opacity-60 text-left mb-4 tracking-tighter">Registered Worldcups</p>
+                                {worldcups.map(wc => (
+                                    <div key={wc.id} className="p-3 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100 shadow-sm">
+                                        <div className="flex items-center gap-2 truncate text-left">
+                                            <span className="opacity-40 text-xs">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
+                                            <span className="text-xs font-bold truncate">{wc.title}</span>
+                                        </div>
+                                        <div className="flex gap-2 shrink-0">
+                                            <button onClick={() => { 
+                                                let formatted = "";
+                                                if (wc.type === 'text') formatted = [wc.title, ...wc.entries.map(e => e.url)].join('\n');
+                                                else formatted = [wc.title, ...wc.entries.flatMap(e => [e.title, e.url])].join('\n');
+                                                setBulkText(formatted); setWcType(wc.type || 'video'); setEditingId(wc.id); 
+                                                document.querySelector('.scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
+                                            }} className="w-9 h-9 bg-white rounded-lg border border-neutral-200 flex items-center justify-center text-sm shadow-sm">✏️</button>
+                                            <button onClick={() => handleDelete(wc.id)} className="w-9 h-9 bg-white rounded-lg border border-neutral-200 flex items-center justify-center text-sm shadow-sm text-red-500">🗑️</button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
             );
 
             if (view === 'game') {
-                const totalMatchesInRound = currentRoundItems.length / 2;
+                const totalMatchesInRound = Math.floor(currentRoundItems.length / 2);
                 const progressPercent = ((matchIndex + 1) / totalMatchesInRound) * 100;
 
                 return (
@@ -357,7 +432,7 @@
 
                         {champion ? (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in zoom-in-95 overflow-hidden text-black-force">
-                                <div className="flex flex-col items-center justify-center shrink-0 w-full mb-4 text-black-force">
+                                <div className="flex flex-col items-center justify-center shrink-0 w-full mb-4">
                                     <Icon name="trophy" color="#fbbf24" className="mb-4 scale-[1.2] drop-shadow-xl" size={64} />
                                     <h2 className="text-base font-black px-6 leading-tight mb-2 truncate max-w-sm">{champion.title}</h2>
                                     <div className="bg-yellow-400 px-3 py-0.5 rounded-full shadow-sm flex items-center justify-center mb-4 leading-none border-none">
@@ -366,17 +441,13 @@
                                 </div>
                                 
                                 <div className="w-full max-w-[380px] aspect-square flex items-center justify-center rounded-[2rem] overflow-hidden bg-neutral-50 border border-neutral-100 shadow-2xl relative mb-12 shrink-0">
-                                    <VideoPlayerSlot video={champion} playerKey="winner" />
+                                    <ContentRenderer item={champion} type={selectedWc.type} playerKey="winner" />
                                 </div>
                                 
                                 <div className="w-full flex justify-center shrink-0 bottom-safe-padding px-6">
-                                    <button 
-                                        onClick={() => {setView('home'); setChampion(null);}} 
-                                        className="w-full max-w-[240px] h-14 bg-black rounded-xl shadow-xl active:scale-95 flex items-center justify-center border-none"
-                                    >
-                                        <div className="flex items-center justify-center text-center">
-                                            <span className="font-black text-white white-text-only text-sm leading-none tracking-[0.2em]">HOME</span>
-                                        </div>
+                                    {/* HOME 버튼 내부 정중앙 정렬 완성 */}
+                                    <button onClick={() => {setView('home'); setChampion(null);}} className="w-full max-w-[240px] h-14 bg-black rounded-xl shadow-xl active:scale-95 flex items-center justify-center border-none">
+                                        <span className="font-black text-white white-text-only text-sm text-center leading-none tracking-[0.2em] w-full">HOME</span>
                                     </button>
                                 </div>
                             </div>
@@ -384,37 +455,31 @@
                             <>
                                 <header className="h-12 shrink-0 flex items-center justify-between px-6 border-b border-neutral-100 bg-white">
                                     <div className="flex flex-col text-left text-black-force">
-                                        <span className="text-[10px] font-black text-blue-600 leading-none uppercase">{roundName}</span>
-                                        <h1 className="text-xs font-bold truncate max-w-[140px] mt-0.5 leading-none text-black-force">{selectedWc?.title}</h1>
+                                        <span className="text-[10px] font-black text-blue-600 leading-none uppercase tracking-tighter">{roundName}</span>
+                                        <h1 className="text-xs font-bold truncate max-w-[140px] mt-0.5 leading-none">{selectedWc?.title}</h1>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="px-2 py-0.5 bg-black rounded-full leading-none flex items-center justify-center h-5">
-                                            <span className="text-[9px] font-black text-white white-text-only tracking-tighter leading-none">
-                                                {matchIndex + 1} / {totalMatchesInRound}
-                                            </span>
+                                            <span className="text-[9px] font-black text-white white-text-only tracking-tighter leading-none">{matchIndex + 1} / {totalMatchesInRound}</span>
                                         </div>
                                         <button onClick={() => setView('home')} className="p-1 opacity-20"><Icon name="x" size={22} /></button>
                                     </div>
                                 </header>
                                 <main className="flex-1 flex flex-col min-h-0 py-1 bg-white">
-                                    <VideoPlayerSlot video={currentRoundItems[matchIndex * 2]} playerKey="up" />
+                                    <ContentRenderer item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} playerKey="up" />
                                     <div className="h-4 flex items-center justify-center relative shrink-0">
                                         <div className="absolute w-full h-[1px] bg-neutral-100"></div>
                                         <div className="relative z-10 px-3 bg-white text-[9px] font-black italic opacity-20 uppercase tracking-widest leading-none text-black-force">VS</div>
                                     </div>
                                     {currentRoundItems[matchIndex * 2 + 1] ? (
-                                        <VideoPlayerSlot video={currentRoundItems[matchIndex * 2 + 1]} playerKey="down" />
+                                        <ContentRenderer item={currentRoundItems[matchIndex * 2 + 1]} type={selectedWc.type} playerKey="down" />
                                     ) : (
-                                        <div className="flex-1 flex items-center justify-center text-[10px] opacity-20 font-bold text-black-force uppercase">부전승 (Select UP)</div>
+                                        <div className="flex-1 flex items-center justify-center text-[10px] opacity-20 font-bold text-black-force uppercase tracking-tighter">Auto Pass</div>
                                     )}
                                 </main>
                                 <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 pt-3 bottom-safe-padding bg-white border-t border-neutral-50 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
-                                    <button onClick={() => selectWinner(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-xl flex items-center justify-center active:opacity-80 shadow-md border-none">
-                                        <span className="font-black text-xl uppercase text-center leading-none text-white white-text-only">UP</span>
-                                    </button>
-                                    <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && selectWinner(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-xl flex items-center justify-center active:opacity-80 shadow-md disabled:opacity-10 border-none">
-                                        <span className="font-black text-xl uppercase text-center leading-none text-white white-text-only">DOWN</span>
-                                    </button>
+                                    <button onClick={() => selectWinner(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-xl flex items-center justify-center active:opacity-80 shadow-md border-none white-text-only font-black text-xl uppercase">UP</button>
+                                    <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && selectWinner(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-xl flex items-center justify-center active:opacity-80 shadow-md disabled:opacity-10 border-none white-text-only font-black text-xl uppercase">DOWN</button>
                                 </footer>
                             </>
                         )}
@@ -428,5 +493,4 @@
     </script>
 </body>
 </html>
-
 
