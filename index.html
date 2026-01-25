@@ -1,374 +1,317 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
-import { Trophy, Settings, Play, X, Lock, Trash2, Edit2, ChevronLeft, Home, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>비디오 월드컵</title>
+    <!-- 라이브러리 로드 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase configuration
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'twitter-video-wc-final';
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvvsLBtIQ92fRe5VkgKbO9-dGr1n6OXvM",
+            authDomain: "hqworldcup-b69fc.firebaseapp.com",
+            projectId: "hqworldcup-b69fc",
+            storageBucket: "hqworldcup-b69fc.firebasestorage.app",
+            messagingSenderId: "107833310403",
+            appId: "1:107833310403:web:e8d60c03081d1c62bd7676",
+            measurementId: "G-704LTTY9JB"
+        };
 
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [view, setView] = useState('home'); 
-  const [worldcups, setWorldcups] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Admin State
-  const [adminPassword, setAdminPassword] = useState('');
-  const [bulkText, setBulkText] = useState('');
-  const [editingId, setEditingId] = useState(null);
+        const app = initializeApp(firebaseConfig);
+        window.fb = {
+            auth: getAuth(app),
+            db: getFirestore(app),
+            signInAnonymously,
+            collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc
+        };
+    </script>
 
-  // Game State
-  const [selectedWc, setSelectedWc] = useState(null);
-  const [currentRoundItems, setCurrentRoundItems] = useState([]);
-  const [winners, setWinners] = useState([]);
-  const [matchIndex, setMatchIndex] = useState(0);
-  const [roundName, setRoundName] = useState('');
-  const [champion, setChampion] = useState(null);
-
-  // Auth initialization
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  // Data listener
-  useEffect(() => {
-    if (!user) return;
-    const wcRef = collection(db, 'artifacts', appId, 'public', 'data', 'worldcups');
-    const unsubscribe = onSnapshot(wcRef, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setWorldcups(docs);
-      setLoading(false);
-    }, (err) => console.error("Firestore Error:", err));
-    return () => unsubscribe();
-  }, [user]);
-
-  // Twitter SDK Loader
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://platform.twitter.com/widgets.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
-
-  // Refresh Twitter widgets
-  useEffect(() => {
-    if (window.twttr && window.twttr.widgets) {
-      setTimeout(() => window.twttr.widgets.load(), 200);
-    }
-  }, [view, matchIndex, champion, selectedWc]);
-
-  // --- Admin Logic ---
-  const handleAdminAuth = () => {
-    if (adminPassword === '0000') {
-      setView('admin');
-      setAdminPassword('');
-    } else {
-      setAdminPassword('');
-      // No alert, simple UI feedback could go here
-    }
-  };
-
-  const saveWorldcup = async () => {
-    if (!bulkText.trim()) return;
-    const lines = bulkText.trim().split('\n').filter(l => l.trim());
-    const title = lines[0].split(',')[0].trim();
-    const entries = lines.map((l, i) => {
-      const p = l.split(',').map(s => s.trim());
-      return p.length >= 3 ? { id: i, title: p[1], url: p[2].replace('x.com', 'twitter.com') } : null;
-    }).filter(Boolean);
-
-    try {
-      if (editingId) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'worldcups', editingId), { title, entries });
-      } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worldcups'), { title, entries, createdAt: serverTimestamp() });
-      }
-      setBulkText('');
-      setEditingId(null);
-      setView('home');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const startEdit = (wc) => {
-    const text = wc.entries.map(e => `${wc.title}, ${e.title}, ${e.url}`).join('\n');
-    setBulkText(text);
-    setEditingId(wc.id);
-  };
-
-  const removeWorldcup = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'worldcups', id));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // --- Game Logic ---
-  const startTournament = (wc) => {
-    setSelectedWc(wc);
-    const shuffled = [...wc.entries].sort(() => Math.random() - 0.5);
-    initRound(shuffled);
-    setChampion(null);
-    setView('game');
-  };
-
-  const initRound = (items) => {
-    setCurrentRoundItems(items);
-    setWinners([]);
-    setMatchIndex(0);
-    const count = items.length;
-    if (count > 16) setRoundName("32강");
-    else if (count > 8) setRoundName("16강");
-    else if (count > 4) setRoundName("8강");
-    else if (count > 2) setRoundName("4강");
-    else if (count === 2) setRoundName("결승전");
-  };
-
-  const selectWinner = (winner) => {
-    const nextWinners = [...winners, winner];
-    setWinners(nextWinners);
-    if ((matchIndex + 1) * 2 < currentRoundItems.length) {
-      setMatchIndex(matchIndex + 1);
-    } else {
-      if (nextWinners.length === 1) {
-        setChampion(nextWinners[0]);
-      } else {
-        initRound(nextWinners);
-      }
-    }
-  };
-
-  // --- Components ---
-  const VideoCard = ({ video, idTag }) => (
-    <div key={`${idTag}-${video.url}`} className="flex-1 flex flex-col min-h-0 w-full">
-      <div className="py-1 px-4 text-center shrink-0">
-        <h3 className="text-[11px] font-bold text-neutral-600 truncate">{video.title}</h3>
-      </div>
-      <div className="flex-1 flex items-center justify-center overflow-hidden">
-        {/* Aspect Ratio Box */}
-        <div className="w-full aspect-square bg-neutral-50 flex items-center justify-center relative border border-neutral-100/50">
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-            <div className="w-full scale-[0.75] origin-center flex justify-center">
-              <blockquote className="twitter-tweet" data-theme="light" data-chrome="noheader nofooter noborders transparent" data-media-max-width="500">
-                <a href={video.url}></a>
-              </blockquote>
-            </div>
-          </div>
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/5 rounded text-[8px] font-black uppercase tracking-tighter text-neutral-400">
-            {idTag}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="h-screen w-full bg-white text-black flex flex-col overflow-hidden font-sans">
-      
-      {/* 1. Home View */}
-      {view === 'home' && (
-        <div className="flex-1 flex flex-col overflow-y-auto p-6 animate-in fade-in duration-300">
-          <header className="py-10 text-center flex flex-col items-center">
-            <div className="p-4 bg-neutral-50 rounded-3xl mb-4 border border-neutral-100">
-              <Trophy size={40} className="text-yellow-500" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tighter">VIDEO WORLDCUP</h1>
-            <p className="text-neutral-400 text-xs mt-1">리스트를 선택하여 시작하세요</p>
-          </header>
-
-          <div className="space-y-3 pb-24 max-w-sm mx-auto w-full">
-            {loading ? <div className="text-center py-20"><Loader2 className="animate-spin mx-auto text-neutral-200" /></div> :
-             worldcups.length === 0 ? <div className="text-center py-20 text-neutral-300">월드컵이 없습니다.</div> :
-             worldcups.map(wc => (
-              <button key={wc.id} onClick={() => startTournament(wc)} className="w-full bg-white p-5 rounded-3xl border border-neutral-100 shadow-sm flex items-center justify-between active:bg-neutral-50 transition-colors">
-                <div className="text-left truncate mr-3">
-                  <h2 className="text-base font-bold text-neutral-800 truncate">{wc.title}</h2>
-                  <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-widest">{wc.entries.length} VIDEOS</p>
-                </div>
-                <Play size={18} className="text-blue-500 fill-current" />
-              </button>
-            ))}
-          </div>
-
-          <button onClick={() => setView('admin_auth')} className="fixed bottom-10 right-6 w-12 h-12 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 z-50 transition-transform">
-            <Settings size={20} />
-          </button>
-        </div>
-      )}
-
-      {/* 2. Admin Auth */}
-      {view === 'admin_auth' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <Lock size={40} className="text-neutral-200 mb-6" />
-          <h2 className="text-xl font-black mb-6">ADMIN AUTH</h2>
-          <input 
-            type="password" 
-            value={adminPassword} 
-            onChange={e => setAdminPassword(e.target.value)} 
-            className="w-full max-w-[200px] border-2 border-neutral-100 rounded-xl p-3 text-center text-2xl tracking-[0.5em] outline-none mb-6 focus:border-black" 
-            placeholder="****"
-            autoFocus
-          />
-          <button onClick={handleAdminAuth} className="w-full max-w-[200px] bg-black text-white font-bold py-4 rounded-xl active:scale-95 transition-transform">인증</button>
-          <button onClick={() => setView('home')} className="mt-6 text-neutral-400 text-sm font-bold">취소</button>
-        </div>
-      )}
-
-      {/* 3. Admin Dashboard */}
-      {view === 'admin' && (
-        <div className="flex-1 flex flex-col bg-white overflow-hidden p-6 animate-in slide-in-from-bottom-5">
-          <header className="flex justify-between items-center mb-6">
-            <button onClick={() => {setView('home'); setEditingId(null); setBulkText('');}} className="p-2 bg-neutral-100 rounded-full"><ChevronLeft size={20} /></button>
-            <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest">Admin List</h1>
-            <div className="w-10" />
-          </header>
-
-          <div className="flex flex-col flex-1 min-h-0 space-y-6">
-            <div className="shrink-0 space-y-3">
-              <textarea 
-                value={bulkText} 
-                onChange={e => setBulkText(e.target.value)} 
-                className="w-full h-32 bg-neutral-50 border border-neutral-100 rounded-xl p-4 font-mono text-[10px] outline-none focus:ring-1 focus:ring-blue-500" 
-                placeholder="월드컵제목, 영상제목, 링크..."
-              />
-              <button onClick={saveWorldcup} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md">
-                {editingId ? '수정 저장' : '월드컵 발행'}
-              </button>
-            </div>
-
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto space-y-2 pb-10">
-                {worldcups.map(wc => (
-                  <div key={wc.id} className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-between">
-                    <span className="font-bold text-xs truncate mr-2">{wc.title}</span>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => startEdit(wc)} className="p-1.5 bg-white text-neutral-500 rounded shadow-sm"><Edit2 size={12} /></button>
-                      <button onClick={() => removeWorldcup(wc.id)} className="p-1.5 bg-white text-red-400 rounded shadow-sm"><Trash2 size={12} /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Game View (Fixed One Screen) */}
-      {view === 'game' && (
-        <div className="flex-1 flex flex-col relative bg-white overflow-hidden">
-          {champion ? (
-            /* Winner Screen */
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in zoom-in-95">
-              <Trophy className="text-yellow-500 mx-auto mb-4" size={48} />
-              <h2 className="text-sm font-black leading-tight px-6 mb-1 truncate max-w-[280px]">{champion.title}</h2>
-              <span className="text-blue-600 font-bold text-[9px] uppercase tracking-widest mb-6 block italic">Winner</span>
-              
-              <div className="w-full max-w-[320px] aspect-square flex items-center justify-center rounded-3xl overflow-hidden bg-neutral-50 border border-neutral-100 shadow-xl mb-10 relative">
-                <VideoCard video={champion} idTag="Champion" />
-              </div>
-
-              <div className="w-full max-w-[200px] mx-auto pb-[env(safe-area-inset-bottom,20px)]">
-                <button onClick={() => {setView('home'); setChampion(null);}} className="w-full bg-black text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
-                  <Home size={16} /> 메인으로
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Play Screen */
-            <div className="flex-1 flex flex-col h-full">
-              <header className="h-12 shrink-0 flex items-center justify-between px-6 border-b border-neutral-50">
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] font-black text-blue-600 leading-none">{roundName}</span>
-                  <h1 className="text-[11px] font-bold truncate max-w-[150px] mt-0.5 text-neutral-800">{selectedWc?.title}</h1>
-                </div>
-                <button onClick={() => setView('home')} className="p-1 text-neutral-300 active:text-black"><X size={20} /></button>
-              </header>
-
-              {/* Video Section - Flex 1 fills middle space */}
-              <main className="flex-1 flex flex-col min-h-0 bg-white">
-                {/* Top Video */}
-                <VideoCard video={currentRoundItems[matchIndex * 2]} idTag="UP" />
-                
-                {/* Divider */}
-                <div className="h-4 flex items-center justify-center relative shrink-0">
-                  <div className="absolute w-full h-[1px] bg-neutral-100"></div>
-                  <div className="relative z-10 px-3 bg-white text-[8px] font-black text-neutral-300 italic">VS</div>
-                </div>
-
-                {/* Bottom Video */}
-                {currentRoundItems[matchIndex * 2 + 1] ? (
-                  <VideoCard video={currentRoundItems[matchIndex * 2 + 1]} idTag="DOWN" />
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-[10px] text-neutral-300 italic font-bold">부전승 매치 (위 선택)</div>
-                )}
-              </main>
-
-              {/* Footer Section - Positioned above Home Bar */}
-              <footer className="shrink-0 flex flex-col bg-white border-t border-neutral-100 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
-                <div className="grid grid-cols-2 gap-4 px-6 pt-4 pb-[calc(env(safe-area-inset-bottom,20px)+20px)]">
-                  <button 
-                    onClick={() => selectWinner(currentRoundItems[matchIndex * 2])} 
-                    className="h-14 bg-red-600 text-white rounded-2xl flex items-center justify-center active:bg-red-700 shadow-md transition-colors"
-                  >
-                    <span className="font-black text-lg">UP</span>
-                  </button>
-                  <button 
-                    onClick={() => currentRoundItems[matchIndex * 2 + 1] && selectWinner(currentRoundItems[matchIndex * 2 + 1])} 
-                    disabled={!currentRoundItems[matchIndex * 2 + 1]}
-                    className="h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center active:bg-blue-700 shadow-md disabled:opacity-20 transition-colors"
-                  >
-                    <span className="font-black text-lg">DOWN</span>
-                  </button>
-                </div>
-              </footer>
-            </div>
-          )}
-        </div>
-      )}
-
-      <style>{`
-        /* Global Twitter Styles */
-        .twitter-tweet {
-          margin: 0 !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-          width: 100% !important;
+    <style>
+        :root { --safe-bottom: env(safe-area-inset-bottom, 24px); }
+        body { 
+            -webkit-tap-highlight-color: transparent; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: white; color: black; margin: 0; padding: 0; 
+            overflow: hidden; height: 100vh; height: -webkit-fill-available;
         }
-        .twitter-tweet-rendered {
-          width: 100% !important;
-          max-width: 500px !important;
-          margin: 0 !important;
-          border: none !important;
-        }
-        iframe {
-          border-radius: 12px !important;
-          border: none !important;
-          background: transparent !important;
-        }
-        /* Mobile Scrollbar Hide */
+        #root { height: 100%; }
+        .twitter-tweet { margin: 0 !important; display: flex !important; justify-content: center !important; width: 100% !important; }
+        .twitter-tweet-rendered { width: 100% !important; max-width: 550px !important; margin: 0 !important; border: none !important; box-shadow: none !important; }
+        iframe { border-radius: 12px !important; border: none !important; background-color: transparent !important; }
+        
+        .game-container { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; }
+        .bottom-safe-padding { padding-bottom: calc(var(--safe-bottom) + 30px); }
+        input, textarea { font-size: 16px !important; }
         ::-webkit-scrollbar { width: 0; background: transparent; }
-      `}</style>
-    </div>
-  );
-};
+    </style>
+</head>
+<body class="bg-white">
+    <div id="root"></div>
 
-export default App;
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    lucide.createIcons({ attrs: { stroke: 'currentColor', 'stroke-width': 2 }, nameMap: { [name]: iconRef.current } });
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('home'); 
+            const [user, setUser] = useState(null);
+            const [worldcups, setWorldcups] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedWc, setSelectedWc] = useState(null);
+            const [champion, setChampion] = useState(null);
+            const [matchIndex, setMatchIndex] = useState(0);
+            const [currentRoundItems, setCurrentRoundItems] = useState([]);
+            const [winners, setWinners] = useState([]);
+            const [roundName, setRoundName] = useState('');
+            const [adminPassword, setAdminPassword] = useState('');
+            const [bulkText, setBulkText] = useState('');
+            const [editingId, setEditingId] = useState(null);
+
+            // 초기화
+            useEffect(() => {
+                const init = async () => {
+                    if (!window.fb) { setTimeout(init, 100); return; }
+                    try {
+                        const { auth, signInAnonymously, db, collection, onSnapshot } = window.fb;
+                        const userCred = await signInAnonymously(auth);
+                        setUser(userCred.user);
+
+                        const appId = "twitter-video-wc-pro";
+                        const wcRef = collection(db, 'artifacts', appId, 'public', 'data', 'worldcups');
+                        
+                        onSnapshot(wcRef, (snapshot) => {
+                            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                            setWorldcups(docs);
+                            setLoading(false);
+                        });
+                    } catch (e) { console.error(e); }
+                };
+                init();
+
+                const script = document.createElement('script');
+                script.src = "https://platform.twitter.com/widgets.js";
+                script.async = true;
+                document.body.appendChild(script);
+            }, []);
+
+            // 영상 로딩 제어
+            useEffect(() => {
+                if (window.twttr && window.twttr.widgets) {
+                    const timer = setTimeout(() => window.twttr.widgets.load(), 150);
+                    return () => clearTimeout(timer);
+                }
+            }, [view, matchIndex, champion, selectedWc]);
+
+            const handleAdminLogin = () => {
+                if (adminPassword === '0000') { setView('admin'); setAdminPassword(''); }
+                else { alert('비밀번호가 틀렸습니다.'); }
+            };
+
+            const startTournament = (wc) => {
+                const shuffled = [...wc.entries].sort(() => Math.random() - 0.5);
+                setSelectedWc(wc);
+                setChampion(null);
+                setMatchIndex(0);
+                setWinners([]);
+                initRound(shuffled);
+                setView('game');
+            };
+
+            const initRound = (items) => {
+                setCurrentRoundItems(items); setWinners([]); setMatchIndex(0);
+                const count = items.length;
+                if (count > 16) setRoundName("32강");
+                else if (count > 8) setRoundName("16강");
+                else if (count > 4) setRoundName("8강");
+                else if (count > 2) setRoundName("4강");
+                else if (count === 2) setRoundName("결승전");
+            };
+
+            const selectWinner = (winner) => {
+                const nextWinners = [...winners, winner];
+                setWinners(nextWinners);
+                if ((matchIndex + 1) * 2 < currentRoundItems.length) {
+                    setMatchIndex(matchIndex + 1);
+                } else {
+                    if (nextWinners.length === 1) setChampion(nextWinners[0]);
+                    else initRound(nextWinners);
+                }
+            };
+
+            const VideoSlot = ({ video, playerKey }) => (
+                <div key={`${playerKey}-${video.url}`} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+                    <div className="py-1 px-4 text-center shrink-0">
+                        <h3 className="text-[12px] font-black text-neutral-800 truncate">{video.title}</h3>
+                    </div>
+                    <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
+                        <div className="w-full aspect-square flex items-center justify-center relative bg-neutral-50 border border-neutral-100/50 rounded-2xl overflow-hidden">
+                            <div className="w-full scale-[0.82] origin-center flex justify-center">
+                                <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="500" data-chrome="noheader nofooter noborders transparent">
+                                    <a href={video.url.replace('x.com', 'twitter.com')}></a>
+                                </blockquote>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // --- 뷰 구성 ---
+
+            if (view === 'home') return (
+                <div className="h-full flex flex-col p-6 bg-white overflow-y-auto">
+                    <header className="py-10 text-center flex flex-col items-center shrink-0">
+                        <div className="p-5 bg-neutral-50 rounded-[2.5rem] mb-4 border border-neutral-100 shadow-sm">
+                            <Icon name="trophy" className="text-yellow-500" size={48} />
+                        </div>
+                        <h1 className="text-3xl font-black tracking-tighter uppercase italic">Video Worldcup</h1>
+                    </header>
+                    <div className="flex-1 space-y-4 pb-32 max-w-md mx-auto w-full">
+                        {loading ? <div className="text-center py-20 font-bold text-neutral-200">불러오는 중...</div> :
+                         worldcups.length === 0 ? <div className="text-center py-10 text-neutral-400">월드컵이 없습니다.</div> :
+                         worldcups.map(wc => (
+                            <button key={wc.id} onClick={() => startTournament(wc)} className="w-full bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm flex items-center justify-between active:bg-neutral-50 transition-all">
+                                <div className="text-left truncate mr-4">
+                                    <h2 className="text-lg font-black text-neutral-800 truncate">{wc.title}</h2>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{wc.entries.length} VIDEOS</p>
+                                </div>
+                                <Icon name="play" className="text-blue-500" size={20} />
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={() => setView('admin_auth')} className="fixed bottom-10 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl z-50 active:scale-90">
+                        <Icon name="settings" size={24} />
+                    </button>
+                </div>
+            );
+
+            if (view === 'admin_auth') return (
+                <div className="h-full flex flex-col items-center justify-center p-8 bg-white text-center">
+                    <Icon name="lock" size={48} className="text-neutral-200 mb-6" />
+                    <h2 className="text-xl font-black mb-8 uppercase">Admin</h2>
+                    <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminLogin()} className="w-full max-w-xs border-2 border-neutral-100 rounded-2xl p-4 text-center text-3xl tracking-[0.5em] outline-none bg-neutral-50" placeholder="****" autoFocus />
+                    <button onClick={handleAdminLogin} className="w-full max-w-xs bg-black text-white font-bold py-5 rounded-2xl mt-4 active:scale-95 shadow-xl">입장하기</button>
+                    <button onClick={() => setView('home')} className="mt-8 text-neutral-300 font-bold">나가기</button>
+                </div>
+            );
+
+            if (view === 'admin') return (
+                <div className="h-full flex flex-col bg-white overflow-hidden p-6">
+                    <header className="flex justify-between items-center mb-6 shrink-0">
+                        <button onClick={() => {setView('home'); setBulkText(''); setEditingId(null);}}><Icon name="arrow-left" /></button>
+                        <h1 className="font-black text-neutral-400 text-xs uppercase italic tracking-widest">Management</h1>
+                        <div className="w-10"></div>
+                    </header>
+                    <div className="flex-1 overflow-y-auto space-y-6 pb-20">
+                        <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-40 bg-neutral-50 border border-neutral-100 rounded-2xl p-5 font-mono text-[11px] outline-none" placeholder="제목, 영상명, 링크..." />
+                        <button onClick={async (e) => {
+                            if(!bulkText.trim()) return;
+                            const btn = e.currentTarget; btn.disabled = true; btn.innerText = "저장 중...";
+                            const lines = bulkText.trim().split('\n').filter(l => l.trim());
+                            const title = lines[0].split(',')[0].trim();
+                            const entries = lines.map((l, i) => {
+                                const p = l.split(',').map(s => s.trim());
+                                return p.length >= 3 ? { id: i, title: p[1], url: p[2].replace('x.com', 'twitter.com') } : null;
+                            }).filter(Boolean);
+                            try {
+                                const { db, collection, addDoc, serverTimestamp, doc, updateDoc } = window.fb;
+                                const appId = "twitter-video-wc-pro";
+                                if (editingId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'worldcups', editingId), { title, entries }); }
+                                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worldcups'), { title, entries, createdAt: serverTimestamp() }); }
+                                setBulkText(''); setEditingId(null); setView('home');
+                            } catch(err) { alert("오류: " + err.message); } finally { btn.disabled = false; btn.innerText = "월드컵 발행"; }
+                        }} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg">{editingId ? '수정 내용 저장' : '월드컵 발행하기'}</button>
+                        
+                        <div className="space-y-3 pt-6 border-t border-neutral-100">
+                            <p className="text-[10px] font-black text-neutral-400 uppercase italic leading-none">Your Lists</p>
+                            {worldcups.map(wc => (
+                                <div key={wc.id} className="p-4 bg-neutral-50 rounded-2xl flex items-center justify-between border border-neutral-100">
+                                    <span className="text-xs font-bold truncate flex-1 mr-4">{wc.title}</span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => { setBulkText(wc.entries.map(e => `${wc.title}, ${e.title}, ${e.url}`).join('\n')); setEditingId(wc.id); }} className="p-2 bg-white rounded-lg text-neutral-600 shadow-sm border border-neutral-100"><Icon name="edit-2" size={14}/></button>
+                                        <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { const { db, doc, deleteDoc } = window.fb; await deleteDoc(doc(db, 'artifacts', 'twitter-video-wc-pro', 'public', 'data', 'worldcups', wc.id)); } }} className="p-2 bg-white rounded-lg text-red-400 shadow-sm border border-neutral-100"><Icon name="trash-2" size={14}/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            if (view === 'game') return (
+                <div className="game-container bg-white">
+                    {champion ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in zoom-in-95">
+                            <Icon name="trophy" className="text-yellow-500 mx-auto mb-4 shrink-0" size={64} />
+                            <h2 className="text-sm font-black px-6 truncate max-w-sm shrink-0 leading-tight">{champion.title}</h2>
+                            <span className="text-blue-600 font-bold text-[9px] uppercase tracking-[0.4em] mb-10 block italic shrink-0">Champion</span>
+                            <div className="w-full max-w-[400px] aspect-square flex items-center justify-center rounded-[2.5rem] overflow-hidden bg-neutral-50 border border-neutral-100 shadow-2xl relative mb-12">
+                                <VideoSlot video={champion} playerKey="winner" />
+                            </div>
+                            <div className="w-full max-w-[240px] flex justify-center shrink-0 bottom-safe-padding">
+                                <button onClick={() => {setView('home'); setChampion(null);}} className="w-full bg-black text-white font-bold py-5 rounded-[2rem] shadow-xl active:scale-95 flex items-center justify-center gap-2">
+                                    <Icon name="home" size={18} /> 메인으로 돌아가기
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-neutral-100 bg-white">
+                                <div className="flex flex-col text-left">
+                                    <span className="text-[10px] font-black text-blue-600 leading-none">{roundName}</span>
+                                    <h1 className="text-xs font-bold truncate max-w-[180px] mt-1 text-neutral-800">{selectedWc?.title}</h1>
+                                </div>
+                                <button onClick={() => setView('home')} className="p-2 text-neutral-300 active:text-black"><Icon name="x" size={24} /></button>
+                            </header>
+                            <main className="flex-1 flex flex-col min-h-0 py-2 bg-white">
+                                <VideoSlot video={currentRoundItems[matchIndex * 2]} playerKey="up" />
+                                <div className="h-4 flex items-center justify-center relative shrink-0">
+                                    <div className="absolute w-full h-[1px] bg-neutral-100"></div>
+                                    <div className="relative z-10 px-3 bg-white text-[9px] font-black italic text-neutral-300">VS</div>
+                                </div>
+                                {currentRoundItems[matchIndex * 2 + 1] ? (
+                                    <VideoSlot video={currentRoundItems[matchIndex * 2 + 1]} playerKey="down" />
+                                ) : (
+                                    <div className="flex-1 flex items-center justify-center text-xs text-neutral-300 italic font-bold">부전승 매치 (위 선택)</div>
+                                )}
+                            </main>
+                            <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 pt-3 bottom-safe-padding bg-white border-t border-neutral-50 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+                                <button onClick={() => selectWinner(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] text-white rounded-2xl flex items-center justify-center active:opacity-80 shadow-md">
+                                    <span className="font-black text-2xl tracking-tighter">UP</span>
+                                </button>
+                                <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && selectWinner(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] text-white rounded-2xl flex items-center justify-center active:opacity-80 shadow-md disabled:opacity-10">
+                                    <span className="font-black text-2xl tracking-tighter">DOWN</span>
+                                </button>
+                            </footer>
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
 
 
