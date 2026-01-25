@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>비디오 월드컵</title>
+    <!-- 라이브러리: 최신 버전 고정 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 사용자가 제공한 설정값 적용
         const firebaseConfig = {
             apiKey: "AIzaSyBvvsLBtIQ92fRe5VkgKbO9-dGr1n6OXvM",
             authDomain: "hqworldcup-b69fc.firebaseapp.com",
@@ -33,18 +33,25 @@
     <style>
         .twitter-tweet { margin: 0 !important; display: flex !important; justify-content: center !important; width: 100% !important; }
         .twitter-tweet-rendered { width: 100% !important; max-width: 550px !important; margin: 0 !important; border: none !important; }
-        iframe { border-radius: 20px !important; }
-        body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        iframe { border-radius: 16px !important; }
+        .no-scroll { overflow: hidden; height: 100vh; }
+        input, textarea { font-size: 16px !important; } /* 모바일 줌 방지 */
     </style>
 </head>
 <body class="bg-white">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
         
+        // 아이콘 헬퍼
         const Icon = ({ name, size = 24, className = "" }) => {
-            useEffect(() => { if(window.lucide) lucide.createIcons(); }, []);
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    lucide.createIcons({ attrs: { stroke: 'currentColor', 'stroke-width': 2 }, nameMap: { [name]: iconRef.current } });
+                }
+            }, [name]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
@@ -58,28 +65,31 @@
             const [winners, setWinners] = useState([]);
             const [roundName, setRoundName] = useState('');
             const [adminPassword, setAdminPassword] = useState('');
+            const [bulkText, setBulkText] = useState('');
             const [db, setDb] = useState(null);
             const [loading, setLoading] = useState(true);
 
+            // 초기화
             useEffect(() => {
-                const initFirebase = async () => {
+                const init = async () => {
                     if(!window.fb) return;
-                    const app = window.fb.initializeApp(window.fbConfig);
-                    const auth = window.fb.getAuth(app);
-                    const firestore = window.fb.getFirestore(app);
-                    setDb(firestore);
-
-                    await window.fb.signInAnonymously(auth);
-                    
-                    const appId = "twitter-video-wc-pro";
-                    const wcRef = window.fb.collection(firestore, 'artifacts', appId, 'public', 'data', 'worldcups');
-                    window.fb.onSnapshot(wcRef, (snapshot) => {
-                        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setWorldcups(docs);
-                        setLoading(false);
-                    });
+                    try {
+                        const app = window.fb.initializeApp(window.fbConfig);
+                        const auth = window.fb.getAuth(app);
+                        const firestore = window.fb.getFirestore(app);
+                        setDb(firestore);
+                        await window.fb.signInAnonymously(auth);
+                        
+                        const appId = "twitter-video-wc-pro";
+                        const wcRef = window.fb.collection(firestore, 'artifacts', appId, 'public', 'data', 'worldcups');
+                        window.fb.onSnapshot(wcRef, (snapshot) => {
+                            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setWorldcups(docs);
+                            setLoading(false);
+                        });
+                    } catch (e) { console.error(e); }
                 };
-                initFirebase();
+                init();
 
                 const script = document.createElement('script');
                 script.src = "https://platform.twitter.com/widgets.js";
@@ -87,9 +97,20 @@
                 document.body.appendChild(script);
             }, []);
 
+            // 뷰 변경 시 위젯 로드
             useEffect(() => {
                 if (window.twttr && window.twttr.widgets) window.twttr.widgets.load();
             }, [view, matchIndex, champion, selectedWorldcup]);
+
+            const handleAdminLogin = () => {
+                if (adminPassword === '0000') {
+                    setView('admin');
+                    setAdminPassword('');
+                } else {
+                    alert('비밀번호가 틀렸습니다.');
+                    setAdminPassword('');
+                }
+            };
 
             const startTournament = (wc) => {
                 setSelectedWorldcup(wc);
@@ -102,6 +123,190 @@
                 setCurrentRoundItems(items);
                 setWinners([]);
                 setMatchIndex(0);
+                const count = items.length;
+                if (count > 16) setRoundName("32강");
+                else if (count > 8) setRoundName("16강");
+                else if (count > 4) setRoundName("8강");
+                else if (count > 2) setRoundName("4강");
+                else if (count === 2) setRoundName("결승전");
+            };
+
+            const selectWinner = (winner) => {
+                const newWinners = [...winners, winner];
+                setWinners(newWinners);
+                if ((matchIndex + 1) * 2 < currentRoundItems.length) {
+                    setMatchIndex(matchIndex + 1);
+                } else {
+                    if (newWinners.length === 1) setChampion(newWinners[0]);
+                    else initRound(newWinners);
+                }
+            };
+
+            // --- Views ---
+
+            if (view === 'home') return (
+                <div className="h-screen flex flex-col p-6 bg-white overflow-y-auto">
+                    <header className="py-12 text-center">
+                        <div className="inline-block p-5 bg-yellow-50 rounded-[2rem] mb-4 border border-yellow-100">
+                            <Icon name="trophy" className="text-yellow-500" size={48} />
+                        </div>
+                        <h1 className="text-3xl font-black tracking-tighter">VIDEO WORLDCUP</h1>
+                    </header>
+                    <div className="space-y-4 pb-24">
+                        {loading ? <div className="text-center py-10 text-neutral-300">목록 불러오는 중...</div> :
+                         worldcups.length === 0 ? <div className="text-center py-10 text-neutral-300">월드컵을 추가해 주세요.</div> :
+                         worldcups.map(wc => (
+                            <button key={wc.id} onClick={() => startTournament(wc)} className="w-full bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm flex items-center justify-between active:scale-95 transition-all">
+                                <div className="text-left truncate mr-4">
+                                    <h2 className="text-lg font-black text-neutral-800 truncate">{wc.title}</h2>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{wc.entries.length} VIDEOS</p>
+                                </div>
+                                <Icon name="play" className="text-blue-500 shrink-0" size={20} />
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={() => setView('admin_auth')} className="fixed bottom-8 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90">
+                        <Icon name="settings" size={24} />
+                    </button>
+                </div>
+            );
+
+            if (view === 'admin_auth') return (
+                <div className="h-screen flex flex-col items-center justify-center p-8 bg-neutral-50">
+                    <div className="w-full max-w-xs space-y-6">
+                        <div className="text-center">
+                            <Icon name="lock" size={48} className="text-neutral-300 mx-auto mb-4" />
+                            <h2 className="text-2xl font-black">ADMIN</h2>
+                        </div>
+                        <input 
+                            type="password" 
+                            value={adminPassword} 
+                            onChange={e => setAdminPassword(e.target.value)} 
+                            onKeyDown={e => e.key === 'Enter' && handleAdminLogin()}
+                            className="w-full border-2 border-neutral-200 rounded-2xl p-4 text-center text-2xl tracking-[0.5em] outline-none focus:border-black bg-white" 
+                            placeholder="****"
+                            autoFocus 
+                        />
+                        <button onClick={handleAdminLogin} className="w-full bg-black text-white font-bold py-5 rounded-2xl shadow-xl active:scale-95">입장하기</button>
+                        <button onClick={() => setView('home')} className="w-full text-neutral-400 font-bold py-2">나가기</button>
+                    </div>
+                </div>
+            );
+
+            if (view === 'admin') return (
+                <div className="h-screen flex flex-col p-6 bg-white animate-in slide-in-from-bottom duration-300">
+                    <header className="flex justify-between items-center mb-6">
+                        <button onClick={() => setView('home')} className="p-2"><Icon name="arrow-left" /></button>
+                        <h1 className="font-black tracking-widest text-neutral-400">ADMIN PANEL</h1>
+                        <div className="w-10"></div>
+                    </header>
+                    <div className="mb-4">
+                        <p className="text-[11px] font-bold text-neutral-400 mb-2 uppercase tracking-tight">CSV 데이터 입력</p>
+                        <textarea 
+                            value={bulkText}
+                            onChange={e => setBulkText(e.target.value)}
+                            className="w-full h-80 bg-neutral-50 border border-neutral-100 rounded-[2rem] p-5 font-mono text-[11px] outline-none focus:ring-2 focus:ring-blue-500/10" 
+                            placeholder="월드컵제목, 영상제목, 링크..." 
+                        />
+                    </div>
+                    <button onClick={async (e) => {
+                        if(!bulkText.trim()) return;
+                        const btn = e.currentTarget;
+                        btn.disabled = true;
+                        btn.innerText = "저장 중...";
+                        const lines = bulkText.trim().split('\n');
+                        const title = lines[0].split(',')[0].trim();
+                        const entries = lines.map((l, i) => {
+                            const p = l.split(',').map(s => s.trim());
+                            return p.length >= 3 ? { id: i, title: p[1], url: p[2].replace('x.com', 'twitter.com') } : null;
+                        }).filter(Boolean);
+                        
+                        try {
+                            const appId = "twitter-video-wc-pro";
+                            await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'worldcups'), { 
+                                title, entries, createdAt: window.fb.serverTimestamp() 
+                            });
+                            setView('home');
+                            setBulkText('');
+                        } catch(err) {
+                            alert("저장 실패: " + err.message);
+                            btn.disabled = false;
+                            btn.innerText = "발행하기";
+                        }
+                    }} className="bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all">월드컵 발행하기</button>
+                </div>
+            );
+
+            if (view === 'game') {
+                if (champion) return (
+                    <div className="h-screen flex flex-col items-center justify-center p-8 bg-white animate-in zoom-in-95">
+                        <div className="text-center mb-8">
+                            <Icon name="trophy" className="text-yellow-500 mx-auto mb-4" size={56} />
+                            <span className="text-blue-600 font-black text-xs uppercase tracking-[0.4em] mb-2 block">Winner</span>
+                            <h2 className="text-3xl font-black leading-tight">{champion.title}</h2>
+                        </div>
+                        <div className="w-full max-w-[480px] aspect-square flex items-center justify-center rounded-[3rem] overflow-hidden bg-neutral-50 border border-neutral-100 mb-10 shadow-2xl relative">
+                            <div className="scale-90 w-full flex justify-center">
+                                <blockquote className="twitter-tweet" data-theme="light"><a href={champion.url}></a></blockquote>
+                            </div>
+                        </div>
+                        <button onClick={() => {setView('home'); setChampion(null);}} className="w-full max-w-xs bg-black text-white font-black py-5 rounded-[2rem] shadow-2xl active:scale-95 flex items-center justify-center gap-2">
+                            <Icon name="home" size={18} /> 목록으로 돌아가기
+                        </button>
+                    </div>
+                );
+
+                const upVideo = currentRoundItems[matchIndex * 2];
+                const downVideo = currentRoundItems[matchIndex * 2 + 1];
+
+                return (
+                    <div className="h-screen flex flex-col bg-white overflow-hidden no-scroll">
+                        <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-neutral-50">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-blue-600 leading-none">{roundName}</span>
+                                <h1 className="text-xs font-bold truncate max-w-[180px] mt-1 text-neutral-800">{selectedWorldcup.title}</h1>
+                            </div>
+                            <button onClick={() => setView('home')} className="p-2"><Icon name="x" className="text-neutral-300" /></button>
+                        </header>
+                        <main className="flex-1 flex flex-col min-h-0">
+                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                                <div className="py-2 px-4 text-center text-xs font-black text-neutral-800 truncate">{upVideo.title}</div>
+                                <div className="flex-1 flex items-center justify-center overflow-hidden">
+                                    <div className="scale-[0.85] sm:scale-90 w-full flex justify-center">
+                                        <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="550"><a href={upVideo.url}></a></blockquote>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-4 flex items-center justify-center relative shrink-0">
+                                <div className="w-full h-[1px] bg-neutral-50"></div>
+                                <div className="relative z-10 px-2 bg-white text-[9px] font-black text-neutral-200 italic">VS</div>
+                            </div>
+                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                                {downVideo ? <>
+                                    <div className="py-2 px-4 text-center text-xs font-black text-neutral-800 truncate">{downVideo.title}</div>
+                                    <div className="flex-1 flex items-center justify-center overflow-hidden">
+                                        <div className="scale-[0.85] sm:scale-90 w-full flex justify-center">
+                                            <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="550"><a href={downVideo.url}></a></blockquote>
+                                        </div>
+                                    </div>
+                                </> : <div className="flex-1 flex items-center justify-center text-xs text-neutral-300 italic">부전승 (위 영상을 선택하세요)</div>}
+                            </div>
+                        </main>
+                        <footer className="h-24 shrink-0 grid grid-cols-2 gap-4 px-5 pb-8 pt-2 bg-white border-t border-neutral-50">
+                            <button onClick={() => selectWinner(upVideo)} className="bg-[#FF4646] text-white rounded-2xl flex flex-col items-center justify-center active:scale-95 shadow-lg"><Icon name="chevron-up" /><span className="font-black text-xs">UP SELECT</span></button>
+                            <button onClick={() => downVideo && selectWinner(downVideo)} disabled={!downVideo} className="bg-[#4673FF] text-white rounded-2xl flex flex-col items-center justify-center active:scale-95 shadow-lg disabled:opacity-10"><Icon name="chevron-down" /><span className="font-black text-xs">DOWN SELECT</span></button>
+                        </footer>
+                    </div>
+                );
+            }
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
                 const count = items.length;
                 if (count > 16) setRoundName("32강");
                 else if (count > 8) setRoundName("16강");
