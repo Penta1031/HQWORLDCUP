@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>비디오 월드컵</title>
-    <!-- 라이브러리 로드 -->
+    <!-- 외부 라이브러리 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,7 +14,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBvvsLBtIQ92fRe5VkgKbO9-dGr1n6OXvM",
@@ -26,20 +26,22 @@
             measurementId: "G-704LTTY9JB"
         };
 
-        window.fb = { initializeApp, getAuth, signInAnonymously, getFirestore, collection, addDoc, onSnapshot, serverTimestamp };
+        window.fb = { initializeApp, getAuth, signInAnonymously, getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc };
         window.fbConfig = firebaseConfig;
     </script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: white; color: black; margin: 0; padding: 0; overflow: hidden; }
+        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: white; color: black; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
         .twitter-tweet { margin: 0 !important; display: flex !important; justify-content: center !important; width: 100% !important; }
-        .twitter-tweet-rendered { width: 100% !important; max-width: 500px !important; margin: 0 !important; border: none !important; box-shadow: none !important; }
-        iframe { border-radius: 12px !important; border: none !important; }
+        .twitter-tweet-rendered { width: 100% !important; max-width: 550px !important; margin: 0 !important; border: none !important; box-shadow: none !important; }
+        iframe { border-radius: 12px !important; border: none !important; background-color: transparent !important; }
         input, textarea { font-size: 16px !important; }
-        .game-container { height: 100vh; display: flex; flex-direction: column; }
+        .game-container { height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: fixed; width: 100%; }
+        /* 스크롤바 숨기기 */
+        ::-webkit-scrollbar { width: 0; background: transparent; }
     </style>
 </head>
-<body>
+<body class="bg-white">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -66,6 +68,7 @@
             const [roundName, setRoundName] = useState('');
             const [adminPassword, setAdminPassword] = useState('');
             const [bulkText, setBulkText] = useState('');
+            const [editingId, setEditingId] = useState(null);
             const [db, setDb] = useState(null);
             const [loading, setLoading] = useState(true);
 
@@ -89,14 +92,18 @@
                     } catch (e) { console.error(e); }
                 };
                 init();
+
                 const script = document.createElement('script');
                 script.src = "https://platform.twitter.com/widgets.js";
                 script.async = true;
+                script.charset = "utf-8";
                 document.body.appendChild(script);
             }, []);
 
             useEffect(() => {
-                if (window.twttr && window.twttr.widgets) window.twttr.widgets.load();
+                if (window.twttr && window.twttr.widgets) {
+                    setTimeout(() => window.twttr.widgets.load(), 100);
+                }
             }, [view, matchIndex, champion, selectedWorldcup]);
 
             const handleAdminLogin = () => {
@@ -138,114 +145,201 @@
                 }
             };
 
+            const handleDelete = async (id) => {
+                if (!db) return;
+                const confirmed = window.confirm("이 월드컵을 삭제하시겠습니까?");
+                if (!confirmed) return;
+                
+                try {
+                    const appId = "twitter-video-wc-pro";
+                    const docRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'worldcups', id);
+                    await window.fb.deleteDoc(docRef);
+                    alert("삭제되었습니다.");
+                } catch (e) {
+                    alert("삭제 실패: " + e.message);
+                }
+            };
+
+            const handleEditStart = (wc) => {
+                const text = wc.entries.map(e => `${wc.title}, ${e.title}, ${e.url}`).join('\n');
+                setBulkText(text);
+                setEditingId(wc.id);
+                document.querySelector('.admin-scroll-top')?.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const TwitterPlayer = ({ video, uniqueKey }) => (
+                <div key={uniqueKey} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+                    <div className="py-2 px-4 text-center shrink-0">
+                        <h3 className="text-[13px] font-black text-neutral-800 truncate">{video.title}</h3>
+                    </div>
+                    <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4">
+                        <div className="w-full flex justify-center scale-[0.9] sm:scale-100 origin-center">
+                            <blockquote className="twitter-tweet" data-theme="light" data-media-max-width="550">
+                                <a href={video.url.replace('x.com', 'twitter.com')}></a>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            );
+
             if (view === 'home') return (
                 <div className="h-screen flex flex-col p-6 bg-white overflow-y-auto">
                     <header className="py-12 text-center flex flex-col items-center">
-                        <div className="p-5 bg-neutral-50 rounded-[2rem] mb-4 border border-neutral-100">
+                        <div className="p-5 bg-neutral-50 rounded-[2rem] mb-4 border border-neutral-100 shadow-sm">
                             <Icon name="trophy" className="text-yellow-500" size={48} />
                         </div>
                         <h1 className="text-3xl font-black tracking-tighter">VIDEO WORLDCUP</h1>
                     </header>
-                    <div className="space-y-4 pb-24">
-                        {loading ? <div className="text-center py-10 text-neutral-300 font-bold">불러오는 중...</div> :
-                         worldcups.length === 0 ? <div className="text-center py-10 text-neutral-400 font-bold">등록된 월드컵이 없습니다.</div> :
+                    <div className="space-y-4 pb-24 max-w-md mx-auto w-full">
+                        {loading ? <div className="text-center py-10 text-neutral-200 font-bold">Loading...</div> :
+                         worldcups.length === 0 ? <div className="text-center py-10 text-neutral-300">등록된 월드컵이 없습니다.</div> :
                          worldcups.map(wc => (
-                            <button key={wc.id} onClick={() => startTournament(wc)} className="w-full bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm flex items-center justify-between active:scale-95 transition-all">
+                            <button key={wc.id} onClick={() => startTournament(wc)} className="w-full bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm flex items-center justify-between active:scale-[0.98] transition-all">
                                 <div className="text-left truncate mr-4">
                                     <h2 className="text-lg font-black text-neutral-800 truncate">{wc.title}</h2>
-                                    <p className="text-[10px] text-neutral-400 font-bold tracking-widest">{wc.entries.length} VIDEOS</p>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{wc.entries.length} VIDEOS</p>
                                 </div>
                                 <Icon name="play" className="text-blue-500" size={20} />
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setView('admin_auth')} className="fixed bottom-8 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90">
+                    <button onClick={() => setView('admin_auth')} className="fixed bottom-8 right-8 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 z-50">
                         <Icon name="settings" size={24} />
                     </button>
                 </div>
             );
 
             if (view === 'admin_auth') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 bg-neutral-50">
+                <div className="h-screen flex flex-col items-center justify-center p-8 bg-white">
                     <div className="w-full max-w-xs space-y-6 text-center">
-                        <Icon name="lock" size={48} className="text-neutral-300 mx-auto" />
-                        <h2 className="text-2xl font-black">ADMIN</h2>
-                        <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminLogin()} className="w-full border-2 border-neutral-200 rounded-2xl p-4 text-center text-2xl tracking-[0.5em] outline-none bg-white focus:border-black" placeholder="****" autoFocus />
-                        <button onClick={handleAdminLogin} className="w-full bg-black text-white font-bold py-5 rounded-2xl shadow-xl">입장하기</button>
-                        <button onClick={() => setView('home')} className="w-full text-neutral-400 font-bold">취소</button>
+                        <Icon name="lock" size={48} className="text-neutral-200 mx-auto" />
+                        <h2 className="text-2xl font-black">ADMIN AUTH</h2>
+                        <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminLogin()} className="w-full border-2 border-neutral-100 rounded-2xl p-4 text-center text-2xl tracking-[0.5em] outline-none bg-neutral-50 focus:border-black" placeholder="****" autoFocus />
+                        <button onClick={handleAdminLogin} className="w-full bg-black text-white font-bold py-5 rounded-2xl shadow-xl active:scale-95">입장하기</button>
+                        <button onClick={() => setView('home')} className="w-full text-neutral-300 font-bold py-2">취소</button>
                     </div>
                 </div>
             );
 
             if (view === 'admin') return (
-                <div className="h-screen flex flex-col p-6 bg-white">
-                    <header className="flex justify-between items-center mb-6">
-                        <button onClick={() => setView('home')} className="p-2"><Icon name="arrow-left" /></button>
-                        <h1 className="font-black tracking-widest text-neutral-400">ADMIN PANEL</h1>
+                <div className="h-screen flex flex-col bg-white overflow-hidden">
+                    <header className="h-16 shrink-0 flex justify-between items-center px-6 border-b border-neutral-50">
+                        <button onClick={() => { setView('home'); setEditingId(null); setBulkText(''); }} className="p-2"><Icon name="arrow-left" /></button>
+                        <h1 className="font-black tracking-widest text-neutral-400 text-xs uppercase">Management</h1>
                         <div className="w-10"></div>
                     </header>
-                    <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="flex-1 w-full bg-neutral-50 border border-neutral-100 rounded-[2rem] p-5 font-mono text-[11px] outline-none mb-6" placeholder="월드컵제목, 영상제목, 링크..." />
-                    <button onClick={async (e) => {
-                        if(!bulkText.trim()) return;
-                        const btn = e.currentTarget;
-                        btn.disabled = true; btn.innerText = "저장 중...";
-                        const lines = bulkText.trim().split('\n');
-                        const title = lines[0].split(',')[0].trim();
-                        const entries = lines.map((l, i) => {
-                            const p = l.split(',').map(s => s.trim());
-                            return p.length >= 3 ? { id: i, title: p[1], url: p[2].replace('x.com', 'twitter.com') } : null;
-                        }).filter(Boolean);
-                        try {
-                            const appId = "twitter-video-wc-pro";
-                            await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'worldcups'), { title, entries, createdAt: window.fb.serverTimestamp() });
-                            setView('home'); setBulkText('');
-                        } catch(err) { alert("오류: " + err.message); btn.disabled = false; btn.innerText = "발행하기"; }
-                    }} className="bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl">월드컵 발행하기</button>
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-32 admin-scroll-top">
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-neutral-400 uppercase tracking-widest block">{editingId ? '수정 모드' : '새로 만들기'}</label>
+                            <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-40 bg-neutral-50 border border-neutral-100 rounded-2xl p-4 font-mono text-[11px] outline-none focus:ring-2 focus:ring-blue-500/10" placeholder="월드컵제목, 영상제목, 링크..." />
+                            <button onClick={async (e) => {
+                                if(!bulkText.trim()) return;
+                                const btn = e.currentTarget;
+                                btn.disabled = true; btn.innerText = "Processing...";
+                                const lines = bulkText.trim().split('\n');
+                                const title = lines[0].split(',')[0].trim();
+                                const entries = lines.map((l, i) => {
+                                    const p = l.split(',').map(s => s.trim());
+                                    return p.length >= 3 ? { id: i, title: p[1], url: p[2] } : null;
+                                }).filter(Boolean);
+                                try {
+                                    const appId = "twitter-video-wc-pro";
+                                    if (editingId) {
+                                        await window.fb.updateDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'worldcups', editingId), { title, entries });
+                                    } else {
+                                        await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'worldcups'), { title, entries, createdAt: window.fb.serverTimestamp() });
+                                    }
+                                    setBulkText(''); setEditingId(null);
+                                } catch(err) { alert(err.message); } finally { btn.disabled = false; btn.innerText = editingId ? "수정 완료" : "월드컵 발행"; }
+                            }} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-100">{editingId ? '저장하기' : '발행하기'}</button>
+                        </div>
+                        <div className="space-y-4">
+                            <label className="text-[11px] font-black text-neutral-400 uppercase tracking-widest block">Worldcup List</label>
+                            {worldcups.map(wc => (
+                                <div key={wc.id} className="p-4 bg-white border border-neutral-100 rounded-2xl flex items-center justify-between shadow-sm">
+                                    <div className="truncate flex-1 mr-4">
+                                        <p className="font-black text-sm truncate">{wc.title}</p>
+                                        <p className="text-[10px] text-neutral-400 font-bold">{wc.entries.length} VIDEOS</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEditStart(wc)} className="p-2 bg-neutral-50 rounded-lg text-neutral-600"><Icon name="edit-2" size={14}/></button>
+                                        <button onClick={() => handleDelete(wc.id)} className="p-2 bg-neutral-50 rounded-lg text-red-400"><Icon name="trash-2" size={14}/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             );
 
             if (view === 'game') {
                 if (champion) return (
-                    <div className="h-screen flex flex-col items-center justify-center p-8 bg-white text-center">
-                        <Icon name="trophy" className="text-yellow-500 mb-4" size={56} />
-                        <h2 className="text-3xl font-black mb-8 leading-tight">{champion.title}</h2>
-                        <div className="w-full max-w-[480px] aspect-square flex items-center justify-center rounded-[2.5rem] overflow-hidden bg-neutral-50 border border-neutral-100 mb-10 shadow-2xl relative">
-                            <div className="scale-90 w-full flex justify-center"><blockquote className="twitter-tweet" data-theme="light"><a href={champion.url}></a></blockquote></div>
+                    <div className="h-screen flex flex-col items-center justify-center p-8 bg-white text-center animate-in zoom-in-95">
+                        <header className="mb-6">
+                            <Icon name="trophy" className="text-yellow-500 mx-auto mb-4" size={56} />
+                            <h2 className="text-xl font-black px-8 leading-tight">{champion.title}</h2>
+                            <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.4em] mt-2 block">Final Champion</span>
+                        </header>
+                        <div className="w-full max-w-[450px] aspect-square flex items-center justify-center rounded-[2.5rem] overflow-hidden bg-neutral-50 border border-neutral-100 mb-10 shadow-2xl relative">
+                            <TwitterPlayer video={champion} uniqueKey={`champion-${champion.url}`} />
                         </div>
-                        <button onClick={() => {setView('home'); setChampion(null);}} className="w-full max-w-xs bg-black text-white font-black py-5 rounded-[2rem] shadow-2xl flex items-center justify-center gap-2"><Icon name="home" size={18} /> 목록으로</button>
+                        <div className="w-full flex justify-center">
+                            <button onClick={() => {setView('home'); setChampion(null);}} className="w-full max-w-xs bg-black text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 flex items-center justify-center gap-2">
+                                <Icon name="home" size={18} /> 메인으로 돌아가기
+                            </button>
+                        </div>
                     </div>
                 );
+
+                const upVideo = currentRoundItems[matchIndex * 2];
+                const downVideo = currentRoundItems[matchIndex * 2 + 1];
+
                 return (
                     <div className="game-container bg-white">
-                        <header className="h-14 flex items-center justify-between px-6 border-b border-neutral-50 shrink-0">
-                            <div className="flex flex-col"><span className="text-[10px] font-black text-blue-600 leading-none">{roundName}</span><h1 className="text-xs font-bold truncate max-w-[180px] mt-1 text-neutral-800">{selectedWorldcup.title}</h1></div>
+                        <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-neutral-50 bg-white">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-blue-600 leading-none">{roundName}</span>
+                                <h1 className="text-xs font-bold truncate max-w-[180px] mt-1 text-neutral-800">{selectedWorldcup.title}</h1>
+                            </div>
                             <button onClick={() => setView('home')} className="p-2"><Icon name="x" className="text-neutral-300" /></button>
                         </header>
-                        <main className="flex-1 flex flex-col min-h-0">
-                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                                <div className="py-2 px-4 text-center text-xs font-black text-neutral-800 truncate">{currentRoundItems[matchIndex * 2].title}</div>
-                                <div className="flex-1 flex items-center justify-center overflow-hidden"><div className="scale-[0.82] w-full flex justify-center"><blockquote className="twitter-tweet" data-theme="light" data-media-max-width="550"><a href={currentRoundItems[matchIndex * 2].url}></a></blockquote></div></div>
+                        <main className="flex-1 flex flex-col min-h-0 py-2">
+                            <TwitterPlayer video={upVideo} uniqueKey={`up-${upVideo.url}`} />
+                            <div className="h-4 flex items-center justify-center relative shrink-0">
+                                <div className="absolute w-full h-[1px] bg-neutral-100"></div>
+                                <div className="relative z-10 px-3 bg-white text-[9px] font-black italic text-neutral-300">VS</div>
                             </div>
-                            <div className="h-4 flex items-center justify-center relative shrink-0"><div className="w-full h-[1px] bg-neutral-100"></div><div className="relative z-10 px-2 bg-white text-[9px] font-black text-neutral-300">VS</div></div>
-                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                                {currentRoundItems[matchIndex * 2 + 1] ? <>
-                                    <div className="py-2 px-4 text-center text-xs font-black text-neutral-800 truncate">{currentRoundItems[matchIndex * 2 + 1].title}</div>
-                                    <div className="flex-1 flex items-center justify-center overflow-hidden"><div className="scale-[0.82] w-full flex justify-center"><blockquote className="twitter-tweet" data-theme="light" data-media-max-width="550"><a href={currentRoundItems[matchIndex * 2 + 1].url}></a></blockquote></div></div>
-                                </> : <div className="flex-1 flex items-center justify-center text-xs text-neutral-300 italic font-bold">부전승 매치</div>}
-                            </div>
+                            {downVideo ? (
+                                <TwitterPlayer video={downVideo} uniqueKey={`down-${downVideo.url}`} />
+                            ) : (
+                                <div className="flex-1 flex items-center justify-center mx-6 my-4 bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
+                                    <p className="text-xs text-neutral-400 font-bold italic">부전승 매치 (위 영상을 선택)</p>
+                                </div>
+                            )}
                         </main>
-                        <footer className="h-24 grid grid-cols-2 gap-4 px-5 pb-8 pt-2 bg-white border-t border-neutral-50 shadow-lg">
-                            <button onClick={() => selectWinner(currentRoundItems[matchIndex * 2])} className="bg-[#FF4646] text-white rounded-2xl flex flex-col items-center justify-center shadow-md active:scale-95"><Icon name="chevron-up" /><span className="font-black text-xs">UP SELECT</span></button>
-                            <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && selectWinner(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="bg-[#4673FF] text-white rounded-2xl flex flex-col items-center justify-center shadow-md active:scale-95 disabled:opacity-10"><Icon name="chevron-down" /><span className="font-black text-xs">DOWN SELECT</span></button>
+                        <footer className="h-20 shrink-0 grid grid-cols-2 gap-3 px-4 pb-4 pt-2 bg-white border-t border-neutral-50 shadow-lg">
+                            <button onClick={() => selectWinner(upVideo)} className="bg-[#FF4646] text-white rounded-2xl flex items-center justify-center active:scale-95 shadow-md">
+                                <span className="font-black text-sm tracking-tighter">UP</span>
+                            </button>
+                            <button 
+                                onClick={() => downVideo && selectWinner(downVideo)} 
+                                disabled={!downVideo} 
+                                className="bg-[#4673FF] text-white rounded-2xl flex items-center justify-center active:scale-95 shadow-md disabled:opacity-10"
+                            >
+                                <span className="font-black text-sm tracking-tighter">DOWN</span>
+                            </button>
                         </footer>
+                        <div className="h-1 w-full bg-neutral-50 shrink-0">
+                            <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${((matchIndex + 1) / Math.ceil(currentRoundItems.length / 2)) * 100}%` }} />
+                        </div>
                     </div>
                 );
             }
         };
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
 </html>
-
 
