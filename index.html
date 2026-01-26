@@ -60,9 +60,23 @@
         }
         #root { height: 100%; width: 100%; }
         
-        /* 순수 비디오 임베드 전용 스타일 */
-        .twitter-video { margin: 0 auto !important; display: flex !important; justify-content: center !important; width: 100% !important; max-width: 100% !important; }
-        .video-wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        /* 트위터 임베드 컨테이너 최적화 */
+        .twitter-video, .twitter-tweet { 
+            margin: 0 auto !important; 
+            display: flex !important; 
+            justify-content: center !important; 
+            width: 100% !important; 
+            max-width: 100% !important; 
+        }
+        .video-wrapper { 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+        }
         iframe { border-radius: 16px !important; border: none !important; }
         
         .scroller-view { 
@@ -150,12 +164,13 @@
                 else window.addEventListener('fb-connected-success', connect);
             }, []);
 
-            // 매 대결 시 트위터 비디오 전용 임베드 로드
             useEffect(() => {
-                if (selectedWc?.type === 'video' && window.twttr && window.twttr.widgets) {
+                if (selectedWc?.type === 'video' && window.twttr) {
                     const timer = setTimeout(() => {
-                        window.twttr.widgets.load();
-                    }, 200);
+                        if (window.twttr.widgets) {
+                            window.twttr.widgets.load();
+                        }
+                    }, 100);
                     return () => clearTimeout(timer);
                 }
             }, [view, matchIndex, champion, selectedWc, currentRoundItems]);
@@ -246,7 +261,9 @@
                     const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
                     finalData = blocks.map((b, i) => {
                         const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
-                        return { id: Date.now() + i, title: lines[0], url: lines.slice(1).join('\n').replace('x.com', 'twitter.com'), winCount: 0 };
+                        let rawUrl = lines.slice(1).join('\n').trim();
+                        const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
+                        return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
                     });
                 }
                 if (finalData.length < 2) { showToast("항목이 부족합니다."); return; }
@@ -318,15 +335,20 @@
                     </div>
                 );
 
-                // --- 트위터 비디오 전용 임베드 (Video Only Mode) ---
                 return (
                     <div className={containerClass}>
                         <div className={cardClass}>
                             <Header />
                             <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-6' : 'py-4'}`}>
                                 <div className="video-wrapper px-2">
-                                    {/* 텍스트, 프로필 숨기고 영상만 노출하는 클래스 및 설정 */}
-                                    <blockquote className="twitter-video" data-show-caption="false" data-show-other-tweets="false" data-theme="light" data-align="center">
+                                    <blockquote 
+                                        key={item.id + matchIndex} 
+                                        className="twitter-tweet" 
+                                        data-media-max-width="560"
+                                        data-theme="light"
+                                        data-align="center"
+                                        data-conversation="none"
+                                    >
                                         <a href={item.url.replace('x.com', 'twitter.com')}></a>
                                     </blockquote>
                                 </div>
@@ -338,7 +360,6 @@
 
             if (!isReady) return <div className="h-full flex items-center justify-center text-neutral-300 font-bold uppercase text-[10px] tracking-widest animate-pulse">Connecting System...</div>;
 
-            // --- Home ---
             if (view === 'home') {
                 const visible = worldcups.filter(wc => wc.status !== 'hidden');
                 return (
@@ -410,7 +431,6 @@
                 );
             }
 
-            // --- 관리자 접속 ---
             if (view === 'admin_auth') return (
                 <div className="scroller-view bg-white items-center justify-center p-8 text-center text-black">
                     <span className="text-4xl mb-6 opacity-20">🔐</span>
@@ -421,7 +441,6 @@
                 </div>
             );
 
-            // --- 관리자 메인 ---
             if (view === 'admin') return (
                 <div className="scroller-view bg-white text-black">
                     <div className="px-6 py-10 w-full max-w-4xl mx-auto pb-[400px]">
@@ -460,7 +479,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-[280px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" placeholder="형식: 항목 사이 빈 줄 두 번" />
+                                    <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-[280px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" placeholder="형식: 항목 사이 빈 줄 두 번&#10;제목&#10;트위터링크" />
                                 )}
                                 <div className="flex gap-2">
                                     {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setVisualEntries([]); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
@@ -490,7 +509,6 @@
                 </div>
             );
 
-            // --- 플레이 및 결과 화면 ---
             if (view === 'game') {
                 const totalM = Math.floor(currentRoundItems.length / 2);
                 const progress = ((matchIndex + 1) / totalM) * 100;
@@ -510,7 +528,10 @@
                                 <div className="mt-[12vh] mb-6 flex flex-col items-center shrink-0 w-full text-black">
                                     <div className="text-5xl mb-4 text-center">🏆</div>
                                     <h2 className="text-base font-black px-6 truncate max-w-sm tracking-tight">{champion.title}</h2>
-                                    <div className="bg-yellow-400 px-4 py-1 rounded-full shadow-sm mt-3 border-none font-bold uppercase"><span className="text-[10px]">🏆 TOTAL WINS: {champion.winCount || 0}</span></div>
+                                    {/* 수정된 부분: flex items-center와 고정 높이를 주어 텍스트와 높이를 맞춤 */}
+                                    <div className="flex items-center justify-center bg-yellow-400 h-6 px-3 rounded-full shadow-sm mt-3 border-none font-bold uppercase overflow-hidden">
+                                        <span className="text-[10px] leading-none">🏆 TOTAL WINS: {champion.winCount || 0}</span>
+                                    </div>
                                 </div>
                                 <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-10 overflow-hidden text-black px-0.5">
                                     <ItemUI item={champion} type={selectedWc.type} isResult={true} />
