@@ -56,14 +56,23 @@
         }
         #root { height: 100%; width: 100%; }
         
-        /* 트위터 임베드 컨테이너 최적화 */
-        .twitter-video, .twitter-tweet { 
+        /* 트위터 임베드 컨테이너 중앙 정렬 강화 */
+        .twitter-video { 
             margin: 0 auto !important; 
-            display: flex !important; 
-            justify-content: center !important; 
+            display: block !important;
             width: 100% !important; 
-            max-width: 100% !important; 
+            max-width: 550px !important; /* 트위터 기본 최대 너비 대응 */
         }
+        
+        /* 생성된 iframe에 직접 접근하여 중앙 정렬 */
+        .twitter-video iframe {
+            margin: 0 auto !important;
+            display: block !important;
+            border-radius: 12px !important; 
+            border: none !important;
+            max-height: 100% !important;
+        }
+
         .video-wrapper { 
             width: 100%; 
             height: 100%; 
@@ -71,12 +80,7 @@
             align-items: center; 
             justify-content: center; 
             overflow: visible; 
-        }
-        /* 컨트롤 버튼이 잘리지 않도록 하단 여백 및 스타일 조정 */
-        iframe { 
-            border-radius: 12px !important; 
-            border: none !important;
-            max-height: 100% !important;
+            text-align: center;
         }
         
         .scroller-view { 
@@ -118,7 +122,6 @@
             const [dataLoading, setDataLoading] = useState(true);
             const [toast, setToast] = useState(null);
             
-            // 플레이 상태
             const [selectedWc, setSelectedWc] = useState(null);
             const [champion, setChampion] = useState(null);
             const [matchIndex, setMatchIndex] = useState(0);
@@ -126,7 +129,6 @@
             const [winners, setWinners] = useState([]);
             const [roundName, setRoundName] = useState('');
             
-            // 관리자 및 UI 상태
             const [adminPw, setAdminPw] = useState('');
             const [bulkText, setBulkText] = useState('');
             const [wcType, setWcType] = useState('video');
@@ -134,7 +136,6 @@
             const [zoomUrl, setZoomUrl] = useState(null);
             const [startNotice, setStartNotice] = useState(null);
 
-            // 편집 상태
             const [visualTitle, setVisualTitle] = useState('');
             const [visualEntries, setVisualEntries] = useState([]);
             const [editingId, setEditingId] = useState(null);
@@ -340,18 +341,20 @@
                         <div className={cardClass}>
                             <Header />
                             <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-0.5'}`}>
-                                <div className="video-wrapper px-1">
-                                    <blockquote 
-                                        key={item.id + matchIndex} 
-                                        className="twitter-video" 
-                                        data-media-max-width="560"
-                                        data-theme="light"
-                                        data-align="center"
-                                        data-lang="ko"
-                                        data-dnt="true"
-                                    >
-                                        <a href={item.url.replace('x.com', 'twitter.com')}></a>
-                                    </blockquote>
+                                <div className="video-wrapper px-1 w-full flex items-center justify-center">
+                                    <div className="w-full max-w-full flex items-center justify-center">
+                                        <blockquote 
+                                            key={item.id + matchIndex} 
+                                            className="twitter-video" 
+                                            data-media-max-width="560"
+                                            data-theme="light"
+                                            data-align="center"
+                                            data-lang="ko"
+                                            data-dnt="true"
+                                        >
+                                            <a href={item.url.replace('x.com', 'twitter.com')}></a>
+                                        </blockquote>
+                                    </div>
                                 </div>
                             </div>
                         </div>
