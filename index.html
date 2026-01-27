@@ -70,7 +70,6 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            /* overflow를 visible로 변경하여 컨트롤바가 잘리지 않게 함 */
             overflow: visible; 
         }
         /* 컨트롤 버튼이 잘리지 않도록 하단 여백 및 스타일 조정 */
@@ -293,12 +292,12 @@
                     : "w-full h-full flex flex-col relative px-2";
                 
                 const cardClass = isResult 
-                    ? "w-full bg-white rounded-[2.5rem] overflow-hidden border border-neutral-100 shadow-premium flex flex-col"
-                    : "w-full h-full bg-neutral-50 rounded-[2.5rem] overflow-hidden border border-neutral-100 shadow-sm flex flex-col";
+                    ? "w-full bg-white rounded-[2rem] overflow-hidden border border-neutral-100 shadow-premium flex flex-col"
+                    : "w-full h-full bg-neutral-50 rounded-[2rem] overflow-hidden border border-neutral-100 shadow-sm flex flex-col";
                 
                 const Header = () => (
-                    <div className="w-full py-2 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
-                        <h3 className="text-[13px] font-black truncate text-black tracking-tight">{item.title}</h3>
+                    <div className="w-full py-1.5 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
+                        <h3 className="text-[12px] font-black truncate text-black tracking-tight">{item.title}</h3>
                     </div>
                 );
 
@@ -340,9 +339,8 @@
                     <div className={containerClass}>
                         <div className={cardClass}>
                             <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-1'}`}>
-                                <div className="video-wrapper px-2">
-                                    {/* twitter-video 클래스를 사용하여 비디오 컨트롤 최적화 */}
+                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-0.5'}`}>
+                                <div className="video-wrapper px-1">
                                     <blockquote 
                                         key={item.id + matchIndex} 
                                         className="twitter-video" 
@@ -554,13 +552,13 @@
                                         <button onClick={() => setView('home')} className="p-1 opacity-20 text-lg text-black font-bold border-none bg-transparent">✕</button>
                                     </div>
                                 </header>
-                                <main className="flex-1 flex flex-col min-h-0 py-1 bg-white relative text-black overflow-hidden">
+                                <main className="flex-1 flex flex-col min-h-0 py-0 bg-white relative text-black overflow-hidden">
                                     <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
                                         <ItemUI item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} />
                                     </div>
-                                    <div className="h-8 flex items-center justify-center relative shrink-0">
+                                    <div className="h-6 flex items-center justify-center relative shrink-0">
                                         <div className="absolute w-full h-[1px] bg-neutral-100"></div>
-                                        <div className="relative z-10 px-3 bg-white text-[10px] font-black italic uppercase">VS</div>
+                                        <div className="relative z-10 px-3 bg-white text-[9px] font-black italic uppercase">VS</div>
                                     </div>
                                     <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
                                         {currentRoundItems[matchIndex * 2 + 1] 
@@ -569,7 +567,7 @@
                                         }
                                     </div>
                                 </main>
-                                <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-6 mb-8 bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-[50]">
+                                <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-5 mb-3 bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-[50]">
                                     <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl border-none">UP</button>
                                     <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl disabled:opacity-10 border-none">DOWN</button>
                                 </footer>
