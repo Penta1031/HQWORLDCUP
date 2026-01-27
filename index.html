@@ -56,15 +56,13 @@
         }
         #root { height: 100%; width: 100%; }
         
-        /* 트위터 임베드 컨테이너 중앙 정렬 강화 */
         .twitter-video { 
             margin: 0 auto !important; 
             display: block !important;
             width: 100% !important; 
-            max-width: 550px !important; /* 트위터 기본 최대 너비 대응 */
+            max-width: 550px !important; 
         }
         
-        /* 생성된 iframe에 직접 접근하여 중앙 정렬 */
         .twitter-video iframe {
             margin: 0 auto !important;
             display: block !important;
@@ -137,7 +135,6 @@
             const [startNotice, setStartNotice] = useState(null);
 
             const [visualTitle, setVisualTitle] = useState('');
-            const [visualEntries, setVisualEntries] = useState([]);
             const [editingId, setEditingId] = useState(null);
 
             const showToast = (txt) => {
@@ -222,54 +219,22 @@
                 }
             };
 
-            const processImage = (file) => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.src = e.target.result;
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const MAX_W = 1000; 
-                            let w = img.width, h = img.height;
-                            if (w > MAX_W) { h *= MAX_W / w; w = MAX_W; }
-                            canvas.width = w; canvas.height = h;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, w, h);
-                            resolve(canvas.toDataURL('image/jpeg', 1.0)); 
-                        };
-                    };
-                });
-            };
-
-            const handleUpload = async (e) => {
-                const files = Array.from(e.target.files);
-                const processed = [];
-                for (const file of files) {
-                    const url = await processImage(file);
-                    processed.push({ id: Date.now() + Math.random(), url, title: "", winCount: 0 });
-                }
-                setVisualEntries([...visualEntries, ...processed]);
-            };
-
             const onSaveWorldcup = async () => {
                 if (!visualTitle.trim()) { showToast("제목을 입력하세요."); return; }
-                let finalData = [];
-                if (wcType === 'image') {
-                    finalData = visualEntries;
-                } else {
-                    const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
-                    finalData = blocks.map((b, i) => {
-                        const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
-                        let rawUrl = lines.slice(1).join('\n').trim();
-                        const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
-                        return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
-                    });
-                }
+                
+                const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
+                const finalData = blocks.map((b, i) => {
+                    const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
+                    let rawUrl = lines.slice(1).join('\n').trim();
+                    const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
+                    return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
+                });
+
                 if (finalData.length < 2) { showToast("항목이 부족합니다."); return; }
+                
                 const { db, collection, addDoc, doc, updateDoc, serverTimestamp } = window.fbStore;
                 const payload = { title: visualTitle, entries: finalData, type: wcType, status: 'published' };
+                
                 try {
                     if (editingId) {
                         await updateDoc(doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', editingId), payload);
@@ -278,7 +243,7 @@
                         await addDoc(collection(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups'), { ...payload, createdAt: serverTimestamp() });
                         showToast("발행 성공! 🚀");
                     }
-                    setEditingId(null); setVisualTitle(''); setVisualEntries([]); setBulkText('');
+                    setEditingId(null); setVisualTitle(''); setBulkText('');
                 } catch (e) { showToast("저장 실패"); }
             };
 
@@ -296,7 +261,7 @@
                     ? "w-full bg-white rounded-[2rem] overflow-hidden border border-neutral-100 shadow-premium flex flex-col"
                     : "w-full h-full bg-neutral-50 rounded-[2rem] overflow-hidden border border-neutral-100 shadow-sm flex flex-col";
                 
-                const Header = () => (
+                const Header = () => isResult ? null : (
                     <div className="w-full py-1.5 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
                         <h3 className="text-[12px] font-black truncate text-black tracking-tight">{item.title}</h3>
                     </div>
@@ -310,8 +275,8 @@
                                 <div className="w-full h-full flex items-center justify-center px-1">
                                     <img 
                                         src={item.url} 
-                                        className="max-w-full max-h-full object-contain" 
-                                        onClick={() => !isResult && setZoomUrl(item.url)} 
+                                        className="max-w-full max-h-full object-contain cursor-zoom-in" 
+                                        onClick={() => setZoomUrl(item.url)} 
                                         alt={item.title} 
                                     />
                                     {isResult && <div className="absolute bottom-6 right-8 bg-white/80 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm text-[12px]" onClick={() => setZoomUrl(item.url)}>🔍</div>}
@@ -449,7 +414,7 @@
                 <div className="scroller-view bg-white text-black">
                     <div className="px-6 py-10 w-full max-w-4xl mx-auto pb-[400px]">
                         <header className="flex justify-between items-center mb-10 shrink-0 text-black">
-                            <button onClick={() => { setView('home'); setEditingId(null); setVisualEntries([]); setVisualTitle(''); }} className="text-xl">⬅️</button>
+                            <button onClick={() => { setView('home'); setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="text-xl">⬅️</button>
                             <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest italic text-center">DASHBOARD</h1>
                             <div className="w-10"></div>
                         </header>
@@ -463,30 +428,20 @@
                                         </button>
                                     ))}
                                 </div>
-                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-white p-5 rounded-2xl font-bold border border-neutral-100 outline-none focus:border-black shadow-inner" placeholder="제목" />
-                                {wcType === 'image' ? (
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center px-1">
-                                            <p className="text-[10px] font-black uppercase opacity-40 italic font-bold">Images ({visualEntries.length})</p>
-                                            <button onClick={() => document.getElementById('admin-file-up').click()} className="text-[10px] font-bold text-blue-600 uppercase underline">+ 사진 추가</button>
-                                            <input id="admin-file-up" type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" />
-                                        </div>
-                                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
-                                            {visualEntries.length === 0 && <div className="py-12 text-center text-neutral-300 text-xs italic border-2 border-dashed border-neutral-200 rounded-2xl bg-white font-bold">비어있음</div>}
-                                            {visualEntries.map((entry, idx) => (
-                                                <div key={idx} className="flex gap-4 bg-white p-3 rounded-2xl items-center border border-neutral-100 shadow-sm">
-                                                    <img src={entry.url} className="w-14 h-14 object-cover rounded-xl shrink-0" />
-                                                    <input value={entry.title} onChange={e => { const next = [...visualEntries]; next[idx].title = e.target.value; setVisualEntries(next); }} className="flex-1 bg-neutral-50 px-4 py-3 rounded-xl text-xs font-bold outline-none" placeholder="제목" />
-                                                    <button onClick={() => setVisualEntries(visualEntries.filter((_, i) => i !== idx))} className="px-2 text-xs opacity-30 text-black">🗑️</button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-[280px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" placeholder="형식: 항목 사이 빈 줄 두 번&#10;제목&#10;트위터링크" />
-                                )}
+                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-white p-5 rounded-2xl font-bold border border-neutral-100 outline-none focus:border-black shadow-inner" placeholder="월드컵 제목" />
+                                
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase opacity-40 italic font-bold ml-1">Entries Data (제목 + 엔터 + 링크)</p>
+                                    <textarea 
+                                        value={bulkText} 
+                                        onChange={e => setBulkText(e.target.value)} 
+                                        className="w-full h-[320px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" 
+                                        placeholder={`항목 사이 빈 줄 두 번(엔터 2번)으로 구분하세요.\n\n예시:\n제목1\nhttps://트위터이미지링크1\n\n제목2\nhttps://트위터이미지링크2`} 
+                                    />
+                                </div>
+
                                 <div className="flex gap-2">
-                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setVisualEntries([]); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
+                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
                                     <button onClick={onSaveWorldcup} className="flex-[2] bg-blue-600 py-5 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 border-none">
                                         {editingId ? '저장 완료' : '월드컵 발행'}
                                     </button>
@@ -502,7 +457,7 @@
                                         <div className="flex gap-1.5 shrink-0 ml-4">
                                             <button onClick={() => handleStartMatch(wc)} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none active:bg-neutral-100">▶️</button>
                                             <button onClick={async () => { const next = wc.status === 'hidden' ? 'published' : 'hidden'; await window.fbStore.updateDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id), {status: next}); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none">{wc.status === 'hidden' ? '🙈' : '👁️'}</button>
-                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setVisualEntries([...wc.entries]); setWcType(wc.type || 'video'); if(wc.type!=='image') setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm font-bold border-none text-black">✏️</button>
+                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setWcType(wc.type || 'video'); setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm font-bold border-none text-black">✏️</button>
                                             <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { await window.fbStore.deleteDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id)); } }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm text-red-500 border-none">🗑️</button>
                                         </div>
                                     </div>
@@ -529,14 +484,14 @@
                         
                         {champion ? (
                             <div className="flex-1 flex flex-col items-center p-4 text-center fade-in-ani overflow-hidden text-black">
-                                <div className="mt-[8vh] mb-4 flex flex-col items-center shrink-0 w-full text-black">
+                                <div className="mt-[5vh] mb-10 flex flex-col items-center shrink-0 w-full text-black">
                                     <div className="text-4xl mb-3 text-center">🏆</div>
                                     <h2 className="text-base font-black px-6 truncate max-w-sm tracking-tight">{champion.title}</h2>
-                                    <div className="flex items-center justify-center bg-yellow-400 h-6 px-3 rounded-full shadow-sm mt-3 border-none font-bold uppercase overflow-hidden">
+                                    <div className="flex items-center justify-center bg-yellow-400 h-6 px-3 rounded-full shadow-sm mt-4 border-none font-bold uppercase overflow-hidden">
                                         <span className="text-[10px] leading-none">🏆 TOTAL WINS: {champion.winCount || 0}</span>
                                     </div>
                                 </div>
-                                <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-6 overflow-hidden text-black px-0.5">
+                                <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-8 overflow-hidden text-black px-0.5">
                                     <ItemUI item={champion} type={selectedWc.type} isResult={true} />
                                 </div>
                                 <div className="w-full flex justify-center shrink-0 px-8 pb-12">
