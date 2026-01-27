@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🏆 HQ WORLDCUP 🏆</title>
     
-    <!-- Noto Sans KR 웹 폰트 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
 
-    <!-- 라이브러리 (CDN) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 트위터 SDK (영상 임베드용) -->
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -60,6 +56,7 @@
         }
         #root { height: 100%; width: 100%; }
         
+        /* 트위터 임베드 컨테이너 최적화 */
         .twitter-video, .twitter-tweet { 
             margin: 0 auto !important; 
             display: flex !important; 
@@ -73,8 +70,7 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; 
+            overflow: hidden; 
         }
         iframe { border-radius: 16px !important; border: none !important; }
         
@@ -117,6 +113,7 @@
             const [dataLoading, setDataLoading] = useState(true);
             const [toast, setToast] = useState(null);
             
+            // 플레이 상태
             const [selectedWc, setSelectedWc] = useState(null);
             const [champion, setChampion] = useState(null);
             const [matchIndex, setMatchIndex] = useState(0);
@@ -124,6 +121,7 @@
             const [winners, setWinners] = useState([]);
             const [roundName, setRoundName] = useState('');
             
+            // 관리자 및 UI 상태
             const [adminPw, setAdminPw] = useState('');
             const [bulkText, setBulkText] = useState('');
             const [wcType, setWcType] = useState('video');
@@ -131,7 +129,9 @@
             const [zoomUrl, setZoomUrl] = useState(null);
             const [startNotice, setStartNotice] = useState(null);
 
+            // 편집 상태
             const [visualTitle, setVisualTitle] = useState('');
+            const [visualEntries, setVisualEntries] = useState([]);
             const [editingId, setEditingId] = useState(null);
 
             const showToast = (txt) => {
@@ -216,21 +216,54 @@
                 }
             };
 
+            const processImage = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_W = 1000; 
+                            let w = img.width, h = img.height;
+                            if (w > MAX_W) { h *= MAX_W / w; w = MAX_W; }
+                            canvas.width = w; canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, w, h);
+                            resolve(canvas.toDataURL('image/jpeg', 1.0)); 
+                        };
+                    };
+                });
+            };
+
+            const handleUpload = async (e) => {
+                const files = Array.from(e.target.files);
+                const processed = [];
+                for (const file of files) {
+                    const url = await processImage(file);
+                    processed.push({ id: Date.now() + Math.random(), url, title: "", winCount: 0 });
+                }
+                setVisualEntries([...visualEntries, ...processed]);
+            };
+
             const onSaveWorldcup = async () => {
                 if (!visualTitle.trim()) { showToast("제목을 입력하세요."); return; }
-                
-                const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
-                const finalData = blocks.map((b, i) => {
-                    const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
-                    let rawUrl = lines.slice(1).join('\n').trim();
-                    const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
-                    return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
-                });
-
+                let finalData = [];
+                if (wcType === 'image') {
+                    finalData = visualEntries;
+                } else {
+                    const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
+                    finalData = blocks.map((b, i) => {
+                        const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
+                        let rawUrl = lines.slice(1).join('\n').trim();
+                        const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
+                        return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
+                    });
+                }
                 if (finalData.length < 2) { showToast("항목이 부족합니다."); return; }
                 const { db, collection, addDoc, doc, updateDoc, serverTimestamp } = window.fbStore;
                 const payload = { title: visualTitle, entries: finalData, type: wcType, status: 'published' };
-                
                 try {
                     if (editingId) {
                         await updateDoc(doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', editingId), payload);
@@ -239,7 +272,7 @@
                         await addDoc(collection(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups'), { ...payload, createdAt: serverTimestamp() });
                         showToast("발행 성공! 🚀");
                     }
-                    setEditingId(null); setVisualTitle(''); setBulkText('');
+                    setEditingId(null); setVisualTitle(''); setVisualEntries([]); setBulkText('');
                 } catch (e) { showToast("저장 실패"); }
             };
 
@@ -258,8 +291,8 @@
                     : "w-full h-full bg-neutral-50 rounded-[2.5rem] overflow-hidden border border-neutral-100 shadow-sm flex flex-col";
                 
                 const Header = () => (
-                    <div className="w-full py-4 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
-                        <h3 className="text-[14px] font-black truncate text-black tracking-tight">{item.title}</h3>
+                    <div className="w-full py-2 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
+                        <h3 className="text-[13px] font-black truncate text-black tracking-tight">{item.title}</h3>
                     </div>
                 );
 
@@ -267,14 +300,13 @@
                     <div className={containerClass}>
                         <div className={cardClass}>
                             <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-6' : 'py-2'}`}>
+                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-1'}`}>
                                 <div className="w-full h-full flex items-center justify-center px-1">
                                     <img 
                                         src={item.url} 
-                                        className="max-w-full max-h-full object-contain cursor-pointer" 
+                                        className="max-w-full max-h-full object-contain" 
                                         onClick={() => !isResult && setZoomUrl(item.url)} 
                                         alt={item.title} 
-                                        onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Invalid+Image+URL"; }}
                                     />
                                     {isResult && <div className="absolute bottom-6 right-8 bg-white/80 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm text-[12px]" onClick={() => setZoomUrl(item.url)}>🔍</div>}
                                 </div>
@@ -287,9 +319,9 @@
                     <div className={containerClass}>
                         <div className={cardClass}>
                             <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-8' : 'py-4'}`}>
+                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-6' : 'py-2'}`}>
                                 <div className="w-full h-full flex items-center justify-center overflow-y-auto px-1">
-                                    <p className="text-black font-medium text-[13px] text-center leading-[1.8] whitespace-pre-wrap break-keep w-full p-10">
+                                    <p className="text-black font-medium text-[13px] text-center leading-[1.8] whitespace-pre-wrap break-keep w-full p-6">
                                         {item.url}
                                     </p>
                                 </div>
@@ -302,7 +334,7 @@
                     <div className={containerClass}>
                         <div className={cardClass}>
                             <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-6' : 'py-4'}`}>
+                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-1'}`}>
                                 <div className="video-wrapper px-2">
                                     <blockquote 
                                         key={item.id + matchIndex} 
@@ -408,7 +440,7 @@
                 <div className="scroller-view bg-white text-black">
                     <div className="px-6 py-10 w-full max-w-4xl mx-auto pb-[400px]">
                         <header className="flex justify-between items-center mb-10 shrink-0 text-black">
-                            <button onClick={() => { setView('home'); setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="text-xl">⬅️</button>
+                            <button onClick={() => { setView('home'); setEditingId(null); setVisualEntries([]); setVisualTitle(''); }} className="text-xl">⬅️</button>
                             <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest italic text-center">DASHBOARD</h1>
                             <div className="w-10"></div>
                         </header>
@@ -422,29 +454,35 @@
                                         </button>
                                     ))}
                                 </div>
-                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-white p-5 rounded-2xl font-bold border border-neutral-100 outline-none focus:border-black shadow-inner" placeholder="월드컵 제목" />
-                                
-                                <div className="space-y-2">
-                                    <div className="flex justify-between px-1">
-                                        <p className="text-[10px] font-black uppercase opacity-40 italic">Bulk Input</p>
-                                        <p className="text-[9px] opacity-40">항목명과 링크 사이 줄바꿈, 항목간 빈 줄 두번</p>
+                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-white p-5 rounded-2xl font-bold border border-neutral-100 outline-none focus:border-black shadow-inner" placeholder="제목" />
+                                {wcType === 'image' ? (
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center px-1">
+                                            <p className="text-[10px] font-black uppercase opacity-40 italic font-bold">Images ({visualEntries.length})</p>
+                                            <button onClick={() => document.getElementById('admin-file-up').click()} className="text-[10px] font-bold text-blue-600 uppercase underline">+ 사진 추가</button>
+                                            <input id="admin-file-up" type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" />
+                                        </div>
+                                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                                            {visualEntries.length === 0 && <div className="py-12 text-center text-neutral-300 text-xs italic border-2 border-dashed border-neutral-200 rounded-2xl bg-white font-bold">비어있음</div>}
+                                            {visualEntries.map((entry, idx) => (
+                                                <div key={idx} className="flex gap-4 bg-white p-3 rounded-2xl items-center border border-neutral-100 shadow-sm">
+                                                    <img src={entry.url} className="w-14 h-14 object-cover rounded-xl shrink-0" />
+                                                    <input value={entry.title} onChange={e => { const next = [...visualEntries]; next[idx].title = e.target.value; setVisualEntries(next); }} className="flex-1 bg-neutral-50 px-4 py-3 rounded-xl text-xs font-bold outline-none" placeholder="제목" />
+                                                    <button onClick={() => setVisualEntries(visualEntries.filter((_, i) => i !== idx))} className="px-2 text-xs opacity-30 text-black">🗑️</button>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <textarea 
-                                        value={bulkText} 
-                                        onChange={e => setBulkText(e.target.value)} 
-                                        className="w-full h-[320px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" 
-                                        placeholder={wcType === 'image' ? "예시:\n이미지제목1\nhttps://주소1.jpg\n\n이미지제목2\nhttps://주소2.png" : "제목\n링크/대사\n\n다음항목..."} 
-                                    />
-                                </div>
-
+                                ) : (
+                                    <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} className="w-full h-[280px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" placeholder="형식: 항목 사이 빈 줄 두 번&#10;제목&#10;트위터링크" />
+                                )}
                                 <div className="flex gap-2">
-                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
+                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setVisualEntries([]); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
                                     <button onClick={onSaveWorldcup} className="flex-[2] bg-blue-600 py-5 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 border-none">
-                                        {editingId ? '수정 완료' : '월드컵 발행'}
+                                        {editingId ? '저장 완료' : '월드컵 발행'}
                                     </button>
                                 </div>
                             </div>
-                            
                             <div className="pt-10 border-t border-neutral-100 space-y-4">
                                 {worldcups.map(wc => (
                                     <div key={wc.id} className={`p-4 bg-white border border-neutral-100 rounded-2xl flex items-center justify-between shadow-sm transition-opacity ${wc.status === 'hidden' ? 'opacity-40 grayscale' : 'opacity-100'}`}>
@@ -455,13 +493,7 @@
                                         <div className="flex gap-1.5 shrink-0 ml-4">
                                             <button onClick={() => handleStartMatch(wc)} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none active:bg-neutral-100">▶️</button>
                                             <button onClick={async () => { const next = wc.status === 'hidden' ? 'published' : 'hidden'; await window.fbStore.updateDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id), {status: next}); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none">{wc.status === 'hidden' ? '🙈' : '👁️'}</button>
-                                            <button onClick={() => { 
-                                                setEditingId(wc.id); 
-                                                setVisualTitle(wc.title); 
-                                                setWcType(wc.type || 'video'); 
-                                                setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); 
-                                                document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); 
-                                            }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm font-bold border-none text-black">✏️</button>
+                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setVisualEntries([...wc.entries]); setWcType(wc.type || 'video'); if(wc.type!=='image') setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm font-bold border-none text-black">✏️</button>
                                             <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { await window.fbStore.deleteDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id)); } }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm text-red-500 border-none">🗑️</button>
                                         </div>
                                     </div>
@@ -479,48 +511,48 @@
                     <div className="game-overlay-fixed bg-white">
                         {zoomUrl && (
                             <div className="fixed inset-0 z-[1000] bg-black/95 flex flex-col items-center justify-center p-4 modal-bg-ani" onClick={() => setZoomUrl(null)}>
-                                <div className="absolute top-12 right-6 z-[1001] w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg text-white font-black">✕</div>
+                                <div className="absolute top-12 right-6 z-[1001] w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg text-white font-bold font-black">✕</div>
                                 <img src={zoomUrl} className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-lg" alt="Full" />
-                                <p className="mt-8 text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase text-center">TAP TO CLOSE</p>
+                                <p className="mt-8 text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase text-center font-bold">TAP TO CLOSE</p>
                             </div>
                         )}
                         {!champion && <div className="w-full h-0.5 bg-neutral-100 shrink-0"><div className="h-full bg-black progress-bar-fill" style={{ width: `${progress}%` }} /></div>}
                         
                         {champion ? (
                             <div className="flex-1 flex flex-col items-center p-4 text-center fade-in-ani overflow-hidden text-black">
-                                <div className="mt-[12vh] mb-6 flex flex-col items-center shrink-0 w-full text-black">
-                                    <div className="text-5xl mb-4 text-center">🏆</div>
+                                <div className="mt-[8vh] mb-4 flex flex-col items-center shrink-0 w-full text-black">
+                                    <div className="text-4xl mb-3 text-center">🏆</div>
                                     <h2 className="text-base font-black px-6 truncate max-w-sm tracking-tight">{champion.title}</h2>
                                     <div className="flex items-center justify-center bg-yellow-400 h-6 px-3 rounded-full shadow-sm mt-3 border-none font-bold uppercase overflow-hidden">
                                         <span className="text-[10px] leading-none">🏆 TOTAL WINS: {champion.winCount || 0}</span>
                                     </div>
                                 </div>
-                                <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-10 overflow-hidden text-black px-0.5">
+                                <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-6 overflow-hidden text-black px-0.5">
                                     <ItemUI item={champion} type={selectedWc.type} isResult={true} />
                                 </div>
-                                <div className="w-full flex justify-center shrink-0 bottom-safe-padding px-8 pb-10">
+                                <div className="w-full flex justify-center shrink-0 px-8 pb-12">
                                     <button onClick={() => {setView('home'); setChampion(null); setRankingWc(null);}} className="w-full max-w-[280px] h-14 bg-black rounded-2xl shadow-xl flex items-center justify-center border-none font-black text-white text-sm tracking-[0.3em] text-center uppercase">HOME</button>
                                 </div>
                             </div>
                         ) : (
                             <>
-                                <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-neutral-100 bg-white text-black">
+                                <header className="h-12 shrink-0 flex items-center justify-between px-6 border-b border-neutral-100 bg-white text-black">
                                     <div className="flex flex-col text-left">
-                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">{roundName}</span>
-                                        <h1 className="text-xs font-bold truncate max-w-[140px] mt-1 text-black font-black">{selectedWc?.title}</h1>
+                                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-tighter">{roundName}</span>
+                                        <h1 className="text-xs font-bold truncate max-w-[140px] mt-0.5 text-black font-black">{selectedWc?.title}</h1>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <div className="px-2.5 py-0.5 bg-black rounded-full text-white text-[9px] font-black flex items-center h-5">{matchIndex + 1} / {totalM}</div>
+                                        <div className="px-2 py-0.5 bg-black rounded-full text-white text-[9px] font-black flex items-center h-4">{matchIndex + 1} / {totalM}</div>
                                         <button onClick={() => setView('home')} className="p-1 opacity-20 text-lg text-black font-bold border-none bg-transparent">✕</button>
                                     </div>
                                 </header>
-                                <main className="flex-1 flex flex-col min-h-0 py-2 bg-white relative text-black overflow-hidden">
+                                <main className="flex-1 flex flex-col min-h-0 py-1 bg-white relative text-black overflow-hidden">
                                     <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
                                         <ItemUI item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} />
                                     </div>
-                                    <div className="h-10 flex items-center justify-center relative shrink-0">
+                                    <div className="h-8 flex items-center justify-center relative shrink-0">
                                         <div className="absolute w-full h-[1px] bg-neutral-100"></div>
-                                        <div className="relative z-10 px-4 bg-white text-[11px] font-black italic opacity-20 uppercase">VS</div>
+                                        <div className="relative z-10 px-3 bg-white text-[10px] font-black italic opacity-20 uppercase">VS</div>
                                     </div>
                                     <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
                                         {currentRoundItems[matchIndex * 2 + 1] 
@@ -529,7 +561,8 @@
                                         }
                                     </div>
                                 </main>
-                                <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-10 bottom-safe-padding bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+                                {/* 하단 버튼 영역 조정: mb-8과 py-6으로 버튼 위치 상향 */}
+                                <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-6 mb-8 bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-[50]">
                                     <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl border-none">UP</button>
                                     <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl disabled:opacity-10 border-none">DOWN</button>
                                 </footer>
