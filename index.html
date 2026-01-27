@@ -70,9 +70,15 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            overflow: hidden; 
+            /* overflow를 visible로 변경하여 컨트롤바가 잘리지 않게 함 */
+            overflow: visible; 
         }
-        iframe { border-radius: 16px !important; border: none !important; }
+        /* 컨트롤 버튼이 잘리지 않도록 하단 여백 및 스타일 조정 */
+        iframe { 
+            border-radius: 12px !important; 
+            border: none !important;
+            max-height: 100% !important;
+        }
         
         .scroller-view { 
             height: 100%; width: 100%; overflow-y: auto; 
@@ -336,13 +342,15 @@
                             <Header />
                             <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-1'}`}>
                                 <div className="video-wrapper px-2">
+                                    {/* twitter-video 클래스를 사용하여 비디오 컨트롤 최적화 */}
                                     <blockquote 
                                         key={item.id + matchIndex} 
-                                        className="twitter-tweet" 
+                                        className="twitter-video" 
                                         data-media-max-width="560"
                                         data-theme="light"
                                         data-align="center"
-                                        data-conversation="none"
+                                        data-lang="ko"
+                                        data-dnt="true"
                                     >
                                         <a href={item.url.replace('x.com', 'twitter.com')}></a>
                                     </blockquote>
@@ -552,7 +560,7 @@
                                     </div>
                                     <div className="h-8 flex items-center justify-center relative shrink-0">
                                         <div className="absolute w-full h-[1px] bg-neutral-100"></div>
-                                        <div className="relative z-10 px-3 bg-white text-[10px] font-black italic opacity-20 uppercase">VS</div>
+                                        <div className="relative z-10 px-3 bg-white text-[10px] font-black italic uppercase">VS</div>
                                     </div>
                                     <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
                                         {currentRoundItems[matchIndex * 2 + 1] 
@@ -561,7 +569,6 @@
                                         }
                                     </div>
                                 </main>
-                                {/* 하단 버튼 영역 조정: mb-8과 py-6으로 버튼 위치 상향 */}
                                 <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-6 mb-8 bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-[50]">
                                     <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl border-none">UP</button>
                                     <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl disabled:opacity-10 border-none">DOWN</button>
