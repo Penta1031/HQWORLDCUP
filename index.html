@@ -2,798 +2,953 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>HQ 월드컵</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>혚쾌 월드컵</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, query } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBvvsLBtIQ92fRe5VkgKbO9-dGr1n6OXvM",
-            authDomain: "hqworldcup-b69fc.firebaseapp.com",
-            projectId: "hqworldcup-b69fc",
-            storageBucket: "hqworldcup-b69fc.firebasestorage.app",
-            messagingSenderId: "107833310403",
-            appId: "1:107833310403:web:e8d60c03081d1c62bd7676",
-            measurementId: "G-704LTTY9JB"
-        };
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-
-            window.fbStore = { 
-                auth, db, collection, addDoc, onSnapshot, serverTimestamp, 
-                doc, updateDoc, deleteDoc, getDoc, query, signInAnonymously 
-            };
-            window.dispatchEvent(new Event('fb-connected-success'));
-        } catch (e) {
-            console.error("Firebase 초기화 에러", e);
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Pretendard', 'sans-serif'] },
+                    colors: { brand: { 50: '#f2f8fb', 100: '#e1eff6', 500: '#3b82f6' } }
+                }
+            }
         }
     </script>
-
     <style>
-        :root { --safe-bottom: env(safe-area-inset-bottom, 24px); }
-        html, body { 
-            background-color: #f0f5f9; color: #111; margin: 0; padding: 0; 
-            height: 100%; width: 100%; overflow: hidden;
-            -webkit-tap-highlight-color: transparent; 
-            font-family: 'Noto Sans KR', sans-serif;
+        body {
+            background: linear-gradient(180deg, #EAF4FC 0%, #F5F9FD 50%, #FFFFFF 100%);
+            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
         }
-        #root { height: 100%; width: 100%; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .scroller-view { 
-            height: 100%; width: 100%; overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; 
-            display: flex; flex-direction: column; 
-            background-color: #f0f5f9;
-        }
-        
-        .game-overlay-fixed { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            display: flex; flex-direction: column; overflow: hidden; z-index: 100; 
-            background: #f0f5f9;
-        }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
+        .select-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .selected-item { transform: scale(1.02); border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); z-index: 20;}
+        .unselected-item { transform: scale(0.95); opacity: 0.4; filter: grayscale(50%); pointer-events: none; }
 
-        ::-webkit-scrollbar { width: 0; background: transparent; }
-        .fade-in-ani { animation: fade-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .modal-bg-ani { animation: fade-in-modal 0.3s ease-out forwards; }
-        @keyframes fade-in-modal { from { opacity: 0; } to { opacity: 1; } }
-
-        /* 🔥 좌우 배치 고정 및 레이아웃 파괴 방지 구조 */
-        .vs-container {
-            flex: 1; 
-            min-height: 0; 
-            position: relative;
-            display: flex;
-            flex-direction: row; 
-            width: 100%;
-            margin-bottom: 12px;
-        }
-        
-        .vs-item {
-            flex: 1; 
-            min-width: 0; 
-            height: 100%;
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s;
-            background-color: transparent; 
-        }
-        .vs-item:active { transform: scale(0.98); }
-
-        .vs-item-inner {
-            position: absolute;
-            top: 0; bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden; 
-        }
-        
-        .vs-item:first-child .vs-item-inner { left: 0; right: 16px; }
-        .vs-item:last-child .vs-item-inner { left: 16px; right: 0; }
-
-        .winner-inner {
-            position: absolute; top: 0; bottom: 0; left: 0; right: 0;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-
-        .media-contain {
-            max-width: 100% !important; 
-            max-height: 100% !important; 
-            width: auto !important; 
-            height: auto !important; 
-            object-fit: contain !important; 
-            display: block;
-            border-radius: 16px; 
-            background-color: transparent; 
-        }
-
-        .embed-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: transparent;
-        }
-        
-        .embed-wrapper iframe, 
-        .embed-wrapper twitter-widget,
-        .embed-wrapper video {
-            max-width: 100% !important;
-            max-height: 100% !important; 
-            margin: 0 auto !important;
-            border-radius: 16px !important;
-        }
-
-        .vs-badge-wrapper {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            pointer-events: none;
-        }
-        
-        .vs-badge {
-            background: white;
-            border-radius: 50%;
-            width: 36px; 
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            color: #333;
-        }
-        
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
-    <div id="root">
-        <div class="flex flex-col items-center justify-center h-full text-gray-400 font-bold uppercase text-[12px] tracking-widest animate-pulse">
-            System Initializing...
+<body class="text-gray-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- 상단 헤더 -->
+    <header id="main-header" class="sticky top-0 z-50 bg-white/40 backdrop-blur-md" style="display: none;">
+        <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+            <button onclick="window.goHome()" class="text-gray-600 hover:text-black p-2 -ml-2">
+                <i class="fa-solid fa-xmark text-xl" id="header-back-btn"></i>
+            </button>
+            <div class="text-center flex-grow">
+                <h1 class="font-bold text-lg tracking-tight truncate w-full px-2" id="header-title">혚쾌 월드컵</h1>
+            </div>
+            <div class="w-8"></div> <!-- 균형을 위한 빈 공간 -->
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main id="app-content" class="max-w-md mx-auto w-full flex-grow relative pb-10">
+        <div class="flex flex-col items-center justify-center h-[50vh] text-blue-500">
+            <i class="fa-solid fa-spinner fa-spin text-4xl mb-3"></i>
+            <p class="text-sm font-bold text-gray-500">클라우드 데이터 불러오는 중...</p>
+        </div>
+    </main>
+
+    <!-- N강 선택 모달 -->
+    <div id="bracket-modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="bracket-modal-content">
+            <div class="text-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-1" id="bracket-modal-title">월드컵 제목</h3>
+                <p class="text-sm text-gray-500">몇 강으로 진행할까요?</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3" id="bracket-options">
+                <!-- JS 렌더링 -->
+            </div>
+            <button onclick="window.closeBracketModal()" class="mt-6 w-full py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
         </div>
     </div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
-        const COLLECTION_ID = 'twitter-video-wc-pro';
-        const MASTER_PASSWORD = '1028hqwc'; 
+    <!-- 원본 미디어 보기 모달 (새로 추가) -->
+    <div id="media-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 fade-in" onclick="window.closeFullMedia()">
+        <button class="absolute top-4 right-4 text-white hover:text-gray-300 z-[210] p-2" onclick="window.closeFullMedia()">
+            <i class="fa-solid fa-xmark text-3xl"></i>
+        </button>
+        <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()">
+            <!-- JS 렌더링 (이미지 또는 비디오) -->
+        </div>
+    </div>
 
-        const App = () => {
-            const [isReady, setIsReady] = useState(false);
-            const [view, setView] = useState('home'); 
-            const [worldcups, setWorldcups] = useState([]);
-            const [dataLoading, setDataLoading] = useState(true);
-            const [toast, setToast] = useState(null);
-            
-            const [selectedWc, setSelectedWc] = useState(null);
-            const [champion, setChampion] = useState(null);
-            const [matchIndex, setMatchIndex] = useState(0);
-            const [currentRoundItems, setCurrentRoundItems] = useState([]);
-            const [winners, setWinners] = useState([]);
-            const [roundName, setRoundName] = useState('');
-            
-            const [adminPw, setAdminPw] = useState('');
-            const [bulkText, setBulkText] = useState('');
-            const [wcType, setWcType] = useState('video');
-            const [rankingWc, setRankingWc] = useState(null);
-            const [zoomUrl, setZoomUrl] = useState(null);
-            
-            const [roundSelectWc, setRoundSelectWc] = useState(null);
+    <!-- 파이어베이스 실시간 DB 연동 스크립트 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            const [visualTitle, setVisualTitle] = useState('');
-            const [editingId, setEditingId] = useState(null);
+        // --- 초기 기본 데이터 설정 ---
+        const defaultCups = [
+            {
+                id: 1,
+                title: "혚쾌 이마키스 월드컵",
+                icon: "🏆",
+                isFeatured: true,
+                items: [
+                    { id: 301, name: "사운드베리", date: "240717", sourceUrl: "https://twitter.com/tody_N/status/1809876363744301145", mediaUrl: null, isVideo: false },
+                    { id: 302, name: "라이브온", date: "240817", sourceUrl: "https://twitter.com/i/status/1824795541748031493", mediaUrl: null, isVideo: false },
+                    { id: 303, name: "썸데이", date: "240907", sourceUrl: "https://twitter.com/i/status/1832333876427112722", mediaUrl: null, isVideo: false },
+                    { id: 304, name: "파크콘서트", date: "240907", sourceUrl: "https://twitter.com/i/status/1832408590923239784", mediaUrl: null, isVideo: false },
+                    { id: 305, name: "경기대", date: "240926", sourceUrl: "https://twitter.com/i/status/1839349008680288257", mediaUrl: null, isVideo: false },
+                    { id: 306, name: "계명대", date: "240927", sourceUrl: "https://twitter.com/i/status/1839683103276892564", mediaUrl: null, isVideo: false },
+                    { id: 307, name: "어썸스테이지", date: "241013", sourceUrl: "https://twitter.com/i/status/1845855622002307522", mediaUrl: null, isVideo: false },
+                    { id: 308, name: "하이드아웃 요코하마", date: "241029", sourceUrl: "https://twitter.com/i/status/1851261242490716208", mediaUrl: null, isVideo: false },
+                    { id: 309, name: "한수원", date: "241108", sourceUrl: "https://twitter.com/i/status/1854900343228055654", mediaUrl: null, isVideo: false },
+                    { id: 310, name: "하이드아웃 방콕", date: "241123", sourceUrl: "https://twitter.com/i/status/1860323159515496861", mediaUrl: null, isVideo: false },
+                    { id: 311, name: "럽펜씨", date: "241231", sourceUrl: "https://twitter.com/i/status/1875180799118713104", mediaUrl: null, isVideo: false },
+                    { id: 312, name: "대덕물빛축제", date: "250405", sourceUrl: "https://twitter.com/i/status/1908481999511445810", mediaUrl: null, isVideo: false },
+                    { id: 313, name: "엔콘4 Day1", date: "250509", sourceUrl: "https://twitter.com/i/status/1920851753584537887", mediaUrl: null, isVideo: false },
+                    { id: 314, name: "엔콘4 Day2", date: "250510", sourceUrl: "https://twitter.com/i/status/1921163147982872924", mediaUrl: null, isVideo: false },
+                    { id: 315, name: "엔콘4 Day3", date: "250511", sourceUrl: "https://twitter.com/i/status/1921498401041973614", mediaUrl: null, isVideo: false },
+                    { id: 316, name: "단국대", date: "250514", sourceUrl: "https://twitter.com/i/status/1922642592807678234", mediaUrl: null, isVideo: false },
+                    { id: 317, name: "경희대", date: "250515", sourceUrl: "https://twitter.com/i/status/1923006368308469918", mediaUrl: null, isVideo: false },
+                    { id: 318, name: "이세계페스티벌", date: "250517", sourceUrl: "https://twitter.com/i/status/1923653404964028510", mediaUrl: null, isVideo: false },
+                    { id: 319, name: "경인여대", date: "250521", sourceUrl: "https://twitter.com/i/status/1925191434795389107", mediaUrl: null, isVideo: false },
+                    { id: 320, name: "가톨릭대", date: "250522", sourceUrl: "https://twitter.com/Penta_1031/status/1925570636837163262", mediaUrl: null, isVideo: false },
+                    { id: 321, name: "대구가톨릭대", date: "250528", sourceUrl: "https://twitter.com/i/status/1927741886967488689", mediaUrl: null, isVideo: false },
+                    { id: 322, name: "음악중심", date: "250605", sourceUrl: "https://twitter.com/i/status/1930613338595278994", mediaUrl: null, isVideo: false },
+                    { id: 323, name: "엔콘4 부산 Day2", date: "250704", sourceUrl: "https://twitter.com/i/status/1941133894893621422", mediaUrl: null, isVideo: false },
+                    { id: 324, name: "엔콘4 뉴욕", date: "250821", sourceUrl: "https://twitter.com/i/status/1958454973756579876", mediaUrl: null, isVideo: false },
+                    { id: 325, name: "엔콘4 애틀란타", date: "250823", sourceUrl: "https://twitter.com/i/status/1959646701872189492", mediaUrl: null, isVideo: false },
+                    { id: 326, name: "엔콘4 런던", date: "251002", sourceUrl: "https://twitter.com/i/status/1973649814266192404", mediaUrl: null, isVideo: false },
+                    { id: 327, name: "엔콘4 싱가폴", date: "251123", sourceUrl: "https://twitter.com/tody_N/status/1992572103418429453", mediaUrl: null, isVideo: false },
+                    { id: 328, name: "그민페", date: "251019", sourceUrl: "https://twitter.com/HALUDA1028/status/1980001347551564053", mediaUrl: null, isVideo: false },
+                    { id: 329, name: "사운드베리", date: "250720", sourceUrl: "https://twitter.com/i/status/1946931277090938948", mediaUrl: null, isVideo: false },
+                    { id: 330, name: "한양대", date: "241002", sourceUrl: "https://twitter.com/tody_N/status/1841519866559529217", mediaUrl: null, isVideo: false }
+                ]
+            },
+            {
+                id: 2,
+                title: "혚쾌버블 월드컵",
+                icon: "🏆",
+                isFeatured: false,
+                items: [
+                    // 방금 올려주신 pbs.twimg.com 다이렉트 이미지 링크 데이터
+                    { id: 401, name: "승혀비형이 해준 미역국", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOPaQAAvS-W?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOPaQAAvS-W?format=jpg&name=large", isVideo: false },
+                    { id: 402, name: "저기저기 잠시만 렌즈좀 봐봐", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOAakAAj9X0?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOAakAAj9X0?format=jpg&name=large", isVideo: false },
+                    { id: 403, name: "난잘못없어...승협이형이 유혹했어...", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOtaEAASfia?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOtaEAASfia?format=jpg&name=large", isVideo: false },
+                    { id: 404, name: "그냥 저 형 그렸어요 하는게 귀여워서", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOQaYAATxNu?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOQaYAATxNu?format=jpg&name=large", isVideo: false },
+                    { id: 405, name: "지금 승짱형아랑 운동쓰중!", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavwWXkAA9pck?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mavwWXkAA9pck?format=jpg&name=medium", isVideo: false },
+                    { id: 406, name: "승구랑 산책겸 이거 보여줄라구", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavzpXsAAENy0?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mavzpXsAAENy0?format=jpg&name=large", isVideo: false },
+                    { id: 407, name: "어제 승구가 나 아파하니까 생강차 줌", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavuVaEAAd5kI?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mavuVaEAAd5kI?format=jpg&name=medium", isVideo: false },
+                    { id: 408, name: "아이가 좋아해요", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavxPb0AAMtAY?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mavxPb0AAMtAY?format=jpg&name=large", isVideo: false },
+                    { id: 409, name: "회승이가 와서 깨워줬어... 너무 고마웠음 하지만 지각", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavT0bYAA9zNJ?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mavT0bYAA9zNJ?format=jpg&name=medium", isVideo: false },
+                    { id: 410, name: "맛있는 회승이의 샤브샤브", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavS6bgAA6SxO?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mavS6bgAA6SxO?format=jpg&name=medium", isVideo: false },
+                    { id: 411, name: "승협이형 떡국 후기", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavX1aMAA5TEE?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mavX1aMAA5TEE?format=jpg&name=large", isVideo: false },
+                    { id: 412, name: "승구가 하자고해서 ㅠㅠ 끌려가는거임", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavUGXwAA0x2J?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mavUGXwAA0x2J?format=jpg&name=medium", isVideo: false },
+                    { id: 413, name: "승구랑 오늘 하루종일 같이 있는중....!", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mau5-asAA60Dt?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mau5-asAA60Dt?format=jpg&name=medium", isVideo: false },
+                    { id: 414, name: "회승이 붕어빵 예약", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mauyZbsAAWr2v?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mauyZbsAAWr2v?format=jpg&name=medium", isVideo: false },
+                    { id: 415, name: "승혀비형 의자 만들기 비하인드!!!", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mavBNbgAAbnt0?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mavBNbgAAbnt0?format=jpg&name=large", isVideo: false },
+                    { id: 416, name: "어? 이거 회승이같다", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mauyKaMAA2oF5?format=jpg&name=medium", mediaUrl: "https://pbs.twimg.com/media/G_mauyKaMAA2oF5?format=jpg&name=medium", isVideo: false }
+                ]
+            }
+        ];
 
-            const showToast = (txt) => {
-                setToast(txt);
-                setTimeout(() => setToast(null), 3000);
+        // --- 전역 변수 ---
+        let WORLD_CUPS = [];
+        let currentView = 'home'; 
+        let selectedCup = null;
+        let roundItems = [];
+        let nextRoundItems = [];
+        let matchIndex = 0;
+        let winner = null;
+        let isTransitioning = false;
+        let isDbLoaded = false;
+        
+        let db, auth, cupsCollectionRef;
+
+        // --- 커스텀 팝업 모달 함수 (alert, confirm 대체) ---
+        window.showAlert = function(msg, callback) {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 fade-in";
+            overlay.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl text-center">
+                    <p class="text-gray-800 font-bold mb-6 whitespace-pre-line text-sm leading-relaxed">${msg}</p>
+                    <button class="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors" id="alert-ok">확인</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('alert-ok').onclick = () => {
+                overlay.remove();
+                if(callback) callback();
             };
+        };
 
-            useEffect(() => {
-                const connect = async () => {
-                    if (!window.fbStore) return;
-                    const { auth, db, collection, onSnapshot, signInAnonymously } = window.fbStore;
-                    try {
-                        await signInAnonymously(auth);
-                        setIsReady(true);
-                        const wcRef = collection(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups');
-                        onSnapshot(wcRef, (snapshot) => {
-                            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                            setWorldcups(docs);
-                            setDataLoading(false);
-                        });
-                    } catch (e) { console.error(e); }
-                };
-                if (window.fbStore) connect();
-                else window.addEventListener('fb-connected-success', connect);
-            }, []);
-
-            useEffect(() => {
-                if (selectedWc?.type === 'video' && window.twttr) {
-                    const timer = setTimeout(() => {
-                        if (window.twttr.widgets) {
-                            window.twttr.widgets.load();
-                        }
-                    }, 100);
-                    return () => clearTimeout(timer);
-                }
-            }, [view, matchIndex, champion, selectedWc, currentRoundItems]);
-
-            // 🔥 모든 떡밥 총합 "통합 월드컵" 자동 생성 로직
-            const integratedWorldcup = useMemo(() => {
-                const visible = worldcups.filter(wc => wc.status !== 'hidden');
-                const allEntriesMap = new Map();
-                
-                // 중복 URL은 승수를 합치면서 하나로 통합
-                visible.forEach(wc => {
-                    wc.entries.forEach(entry => {
-                        if (!allEntriesMap.has(entry.url)) {
-                            // 항목에 원래 소속된 월드컵의 type과 id를 기록 (결과 저장 및 렌더링에 사용)
-                            allEntriesMap.set(entry.url, { ...entry, type: wc.type, originalWcId: wc.id });
-                        } else {
-                            const existing = allEntriesMap.get(entry.url);
-                            existing.winCount = (existing.winCount || 0) + (entry.winCount || 0);
-                        }
-                    });
-                });
-
-                return {
-                    id: 'integrated_all',
-                    title: '👑 모든 떡밥 총합 월드컵',
-                    entries: Array.from(allEntriesMap.values()),
-                    type: 'mixed' // 렌더러가 각 아이템의 타입에 맞게 동작하도록 지시
-                };
-            }, [worldcups]);
-
-            const confirmStartMatch = (wc, roundSize) => {
-                if (!wc.entries || wc.entries.length < 2) {
-                    showToast("항목이 부족합니다.");
-                    return;
-                }
-                const shuffled = [...wc.entries].sort(() => Math.random() - 0.5).slice(0, roundSize);
-                
-                setSelectedWc(wc);
-                setChampion(null);
-                setMatchIndex(0);
-                setWinners([]);
-                initRound(shuffled);
-                setRoundSelectWc(null); 
-                setView('game');
+        window.showConfirm = function(msg, onConfirm) {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 fade-in";
+            overlay.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl text-center">
+                    <p class="text-gray-800 font-bold mb-6 whitespace-pre-line text-sm leading-relaxed">${msg}</p>
+                    <div class="flex gap-2">
+                        <button class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors" id="confirm-no">취소</button>
+                        <button class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors" id="confirm-yes">확인</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('confirm-no').onclick = () => overlay.remove();
+            document.getElementById('confirm-yes').onclick = () => {
+                overlay.remove();
+                onConfirm();
             };
+        };
 
-            const initRound = (items) => {
-                setCurrentRoundItems(items); setWinners([]); setMatchIndex(0);
-                const count = items.length;
-                if (count === 2) setRoundName("결승전");
-                else setRoundName(`${count}강`);
-            };
+        window.showPasswordPrompt = function(onSuccess) {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-black/50 z-[210] flex items-center justify-center p-4 fade-in";
+            overlay.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl text-center">
+                    <h3 class="text-gray-900 font-bold mb-4 text-lg">관리자 인증</h3>
+                    <input type="password" id="admin-password-input" placeholder="비밀번호 입력" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 mb-2 transition-colors">
+                    <p id="prompt-error" class="text-red-500 text-xs font-bold hidden mb-4">비밀번호가 일치하지 않습니다.</p>
+                    <div class="flex gap-2 mt-2">
+                        <button class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors" id="prompt-cancel">취소</button>
+                        <button class="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors" id="prompt-submit">확인</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
 
-            const onSelectItem = async (winner) => {
-                const nextWinners = [...winners, winner];
-                setWinners(nextWinners);
-                if ((matchIndex + 1) * 2 < currentRoundItems.length) {
-                    setMatchIndex(matchIndex + 1);
+            const input = document.getElementById('admin-password-input');
+            const errorMsg = document.getElementById('prompt-error');
+            input.focus();
+
+            document.getElementById('prompt-cancel').onclick = () => overlay.remove();
+            
+            const submit = () => {
+                if (input.value === '1028hqwc') {
+                    overlay.remove();
+                    onSuccess();
                 } else {
-                    if (nextWinners.length === 1) {
-                        setChampion(nextWinners[0]);
-                        const { db, doc, updateDoc } = window.fbStore;
-                        
-                        try {
-                            // 🔥 통합 월드컵에서 우승한 경우, 원래 속했던 개별 월드컵 문서의 승수를 업데이트
-                            if (selectedWc.id === 'integrated_all') {
-                                const originalId = nextWinners[0].originalWcId;
-                                const targetWc = worldcups.find(w => w.id === originalId);
-                                if (targetWc) {
-                                    const wcRef = doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', originalId);
-                                    const updatedEntries = targetWc.entries.map(entry => {
-                                        if (entry.url === nextWinners[0].url) return { ...entry, winCount: (entry.winCount || 0) + 1 };
-                                        return entry;
-                                    });
-                                    await updateDoc(wcRef, { entries: updatedEntries });
-                                }
-                            } else {
-                                // 일반 개별 월드컵 업데이트
-                                const wcRef = doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', selectedWc.id);
-                                const updatedEntries = selectedWc.entries.map(entry => {
-                                    if (entry.url === winner.url) return { ...entry, winCount: (entry.winCount || 0) + 1 };
-                                    return entry;
-                                });
-                                await updateDoc(wcRef, { entries: updatedEntries });
-                            }
-                        } catch (e) {
-                            console.error("우승 기록 저장 실패", e);
-                        }
-                    } else {
-                        initRound(nextWinners);
-                    }
+                    errorMsg.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
                 }
             };
 
-            const onSaveWorldcup = async () => {
-                if (!visualTitle.trim()) { showToast("제목을 입력하세요."); return; }
-                
-                const blocks = bulkText.split(/\n\n+/).map(b => b.trim()).filter(b => b !== "");
-                const finalData = blocks.map((b, i) => {
-                    const lines = b.split('\n').map(l => l.trim()).filter(l => l !== "");
-                    let rawUrl = lines.slice(1).join('\n').trim();
-                    const formattedUrl = rawUrl.replace('x.com', 'twitter.com');
-                    return { id: Date.now() + i, title: lines[0], url: formattedUrl, winCount: 0 };
-                });
+            document.getElementById('prompt-submit').onclick = submit;
+            input.onkeypress = (e) => { if (e.key === 'Enter') submit(); };
+        };
 
-                if (finalData.length < 2) { showToast("항목이 부족합니다."); return; }
-                
-                const { db, collection, addDoc, doc, updateDoc, serverTimestamp } = window.fbStore;
-                const payload = { title: visualTitle, entries: finalData, type: wcType, status: 'published' };
-                
-                try {
-                    if (editingId) {
-                        await updateDoc(doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', editingId), payload);
-                        showToast("수정 완료! ✅");
-                    } else {
-                        await addDoc(collection(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups'), { ...payload, createdAt: serverTimestamp() });
-                        showToast("발행 성공! 🚀");
-                    }
-                    setEditingId(null); setVisualTitle(''); setBulkText('');
-                } catch (e) { showToast("저장 실패"); }
-            };
-
-            const onAdminLogin = () => {
-                if (adminPw === MASTER_PASSWORD) { setView('admin'); setAdminPw(''); }
-                else { showToast("비번이 틀렸습니다."); setAdminPw(''); }
-            };
-
-            const TwitterAutoPlayer = ({ url }) => {
-                const [mp4Url, setMp4Url] = useState(null);
-                const [useFallback, setUseFallback] = useState(false);
-
-                useEffect(() => {
-                    let isMounted = true;
-                    const fetchMp4 = async () => {
-                        try {
-                            const match = url.match(/https:\/\/(?:twitter\.com|x\.com)\/([^\/]+)\/status\/(\d+)/);
-                            if (match) {
-                                const username = match[1];
-                                const tweetId = match[2];
-                                const apiUrl = `https://api.vxtwitter.com/${username}/status/${tweetId}`;
-                                
-                                const response = await fetch(apiUrl);
-                                if (!response.ok) throw new Error("API 연동 실패");
-                                
-                                const data = await response.json();
-                                if (data && data.mediaURLs && data.mediaURLs.length > 0 && isMounted) {
-                                    setMp4Url(data.mediaURLs[0]);
-                                    return;
-                                }
-                            }
-                            throw new Error("영상이 없거나 유효하지 않은 트윗");
-                        } catch (err) {
-                            if (isMounted) setUseFallback(true);
-                        }
-                    };
-                    fetchMp4();
-                    return () => { isMounted = false; };
-                }, [url]);
-
-                if (mp4Url) {
-                    return (
-                        <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent rounded-[16px] overflow-hidden">
-                            <video 
-                                src={mp4Url} 
-                                className="media-contain w-full h-full object-contain" 
-                                autoPlay loop muted playsInline 
-                            />
-                        </div>
-                    );
-                }
-
-                if (useFallback) {
-                    return (
-                        <div className="embed-wrapper">
-                            <blockquote 
-                                key={url + matchIndex} 
-                                className="twitter-video m-0" 
-                                data-theme="light"
-                                data-align="center"
-                                data-lang="ko"
-                                data-dnt="true"
-                            >
-                                <a href={url.replace('x.com', 'twitter.com')}></a>
-                            </blockquote>
-                        </div>
-                    );
-                }
-
-                return (
-                    <div className="w-full h-full flex items-center justify-center bg-[#e2e8f0] rounded-[16px] animate-pulse">
-                        <div className="text-gray-500 text-[10px] font-bold">로딩중...</div>
-                    </div>
-                );
-            };
-
-            const MediaContent = ({ item, type }) => {
-                if (!item) return null;
-
-                // 🔥 통합 월드컵(mixed)인 경우 개별 아이템에 저장된 원래 타입을 우선 적용
-                const effectiveType = item.type || type;
-
-                if (effectiveType === 'image') return (
-                    <img 
-                        src={item.url} 
-                        className="media-contain cursor-zoom-in" 
-                        alt={item.title} 
-                        onClick={(e) => { e.stopPropagation(); setZoomUrl(item.url); }}
-                    />
-                );
-
-                if (effectiveType === 'text') return (
-                    <div className="w-full h-full max-h-full flex items-center justify-center bg-white p-6 overflow-y-auto rounded-[16px] shadow-sm">
-                        <p className="text-black font-medium text-[14px] text-center leading-[1.8] whitespace-pre-wrap break-keep w-full">
-                            {item.url}
-                        </p>
-                    </div>
-                );
-
-                const url = item.url.trim();
-                const isHTML = url.startsWith('<');
-                const isMp4 = url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('.webm');
-                const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
-
-                if (isHTML) {
-                    return <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent" dangerouslySetInnerHTML={{ __html: url }} />;
-                }
-
-                if (isMp4) {
-                    return (
-                        <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent rounded-[16px] overflow-hidden">
-                            <video 
-                                src={url} 
-                                className="media-contain w-full h-full object-contain" 
-                                autoPlay loop muted playsInline 
-                            />
-                        </div>
-                    );
-                }
-
-                if (isYoutube) {
-                    let videoId = '';
-                    if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1]?.split('?')[0];
-                    else if (url.includes('v=')) videoId = url.split('v=')[1]?.split('&')[0];
-                    
-                    return (
-                        <div className="embed-wrapper w-full h-full rounded-[16px] bg-transparent overflow-hidden flex items-center justify-center">
-                            <iframe 
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`} 
-                                className="w-full h-full border-none max-w-full max-h-full"
-                                allow="autoplay; fullscreen"
-                            />
-                        </div>
-                    );
-                }
-
-                return <TwitterAutoPlayer url={url} />;
-            };
-
-            if (!isReady) return <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase text-[12px] tracking-widest animate-pulse bg-[#f0f5f9]">Connecting System...</div>;
-
-            if (view === 'home') {
-                const visible = worldcups.filter(wc => wc.status !== 'hidden');
-                return (
-                    <div className="scroller-view">
-                        {toast && <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] bg-gray-800 text-white px-6 py-3 rounded-full text-[13px] font-bold shadow-lg animate-bounce">{toast}</div>}
-                        
-                        <div className="px-5 py-6 w-full max-w-2xl mx-auto flex flex-col pb-40">
-                            <header className="py-8 text-center flex flex-col items-center shrink-0">
-                                <div className="text-[42px] mb-2 leading-none">🏆</div>
-                                <h1 className="text-[24px] font-black tracking-tight text-gray-900">HQ WORLDCUP</h1>
-                            </header>
-
-                            <div className="space-y-3">
-                                {dataLoading ? (
-                                    <div className="text-center py-20 text-gray-400 font-bold text-[12px] animate-pulse uppercase tracking-widest">LOADING...</div>
-                                ) : (
-                                    <>
-                                        {/* 🔥 총합 통합 월드컵 (항목이 2개 이상일 때만 표시) */}
-                                        {integratedWorldcup.entries.length >= 2 && (
-                                            <div onClick={() => setRoundSelectWc(integratedWorldcup)} className="bg-gradient-to-r from-[#fff9c4] to-[#fff176] rounded-[18px] p-5 flex items-center justify-between shadow-[0_4px_16px_rgba(255,200,0,0.2)] cursor-pointer active:scale-[0.98] transition-transform mb-2 border border-[#ffee58]">
-                                                <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                                                    <div className="text-[26px] shrink-0 flex items-center justify-center w-12 h-12 bg-white/60 rounded-full shadow-sm">
-                                                        👑
-                                                    </div>
-                                                    <div className="flex flex-col text-left truncate">
-                                                        <h2 className="text-[16px] font-black text-yellow-900 mb-0.5 truncate">{integratedWorldcup.title}</h2>
-                                                        <p className="text-[12px] text-yellow-800 font-bold truncate opacity-80">총 {integratedWorldcup.entries.length}개의 떡밥 · 자동 업데이트</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); setRankingWc(integratedWorldcup); }} className="w-10 h-10 bg-white/60 rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                                                        <span className="text-[15px]">🏆</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="w-full h-[1px] bg-gray-200 my-4 opacity-50"></div>
-
-                                        {/* 기존 개별 월드컵 리스트 */}
-                                        {visible.map(wc => (
-                                            <div key={wc.id} className="bg-white rounded-[18px] p-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.98] transition-transform">
-                                                <div className="flex items-center gap-4 flex-1 overflow-hidden" onClick={() => setRoundSelectWc(wc)}>
-                                                    <div className="text-2xl shrink-0 flex items-center justify-center w-10 h-10 bg-[#f0f5f9] rounded-full">
-                                                        {wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}
-                                                    </div>
-                                                    <div className="flex flex-col text-left truncate">
-                                                        <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 truncate">{wc.title}</h2>
-                                                        <p className="text-[12px] text-gray-400 truncate">총 {wc.entries.length}개의 항목 · {wc.type === 'video' ? '비디오' : wc.type === 'image' ? '이미지' : '텍스트'} 월드컵</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); setRankingWc(wc); }} className="w-9 h-9 bg-[#f0f5f9] rounded-full flex items-center justify-center active:bg-gray-200 transition-colors">
-                                                        <span className="text-[14px]">🏆</span>
-                                                    </button>
-                                                    <div className="w-8 flex items-center justify-center text-[#4a90e2]" onClick={() => setRoundSelectWc(wc)}>
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* 🔥 강수(라운드) 선택 모달 */}
-                        {roundSelectWc && (
-                            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 modal-bg-ani" onClick={() => setRoundSelectWc(null)}>
-                                <div className="bg-white w-full max-w-xs rounded-[24px] p-6 text-center shadow-2xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-                                    <div className="text-4xl mb-3 mt-2">{roundSelectWc.id === 'integrated_all' ? '👑' : '🏆'}</div>
-                                    <h3 className="font-black text-[18px] mb-1 text-gray-900 truncate px-2">{roundSelectWc.title}</h3>
-                                    <p className="text-gray-400 text-[13px] mb-5">총 {roundSelectWc.entries.length}개의 항목</p>
-
-                                    <div className="text-left mb-3 pl-1">
-                                        <span className="font-bold text-gray-800 text-[14px]">라운드 선택</span>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pb-2 scrollbar-hide">
-                                        {(() => {
-                                            const total = roundSelectWc.entries.length;
-                                            let rounds = [4, 8, 16, 32, 64, 128, 256].filter(r => r <= total);
-                                            if (total < 4) rounds = [total]; 
-                                            if (total > 4 && !rounds.includes(total)) rounds.push(total); 
-                                            const uniqueRounds = [...new Set(rounds)].sort((a,b)=>a-b);
-                                            
-                                            return uniqueRounds.map(r => (
-                                                <button 
-                                                    key={r} 
-                                                    onClick={() => confirmStartMatch(roundSelectWc, r)} 
-                                                    className="bg-[#f0f5f9] hover:bg-[#e4ebf1] text-gray-800 font-bold py-3.5 rounded-[14px] transition-colors active:scale-95 border-none text-[15px] shadow-sm flex flex-col items-center justify-center gap-0.5"
-                                                >
-                                                    <span>{r}강</span>
-                                                    {![4, 8, 16, 32, 64, 128, 256].includes(r) && <span className="text-[10px] text-gray-400 font-medium">전체 항목</span>}
-                                                </button>
-                                            ));
-                                        })()}
-                                    </div>
-                                    <button onClick={() => setRoundSelectWc(null)} className="w-full mt-4 py-3 text-gray-400 font-bold text-[14px] active:scale-95 transition-transform bg-transparent border-none">닫기</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {rankingWc && (
-                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm" onClick={() => setRankingWc(null)}>
-                                <div className="bg-white w-full max-w-md max-h-[75vh] rounded-[24px] p-6 flex flex-col shadow-2xl modal-bg-ani" onClick={e => e.stopPropagation()}>
-                                    <header className="flex justify-between items-center mb-6 shrink-0">
-                                        <h3 className="font-black text-lg text-gray-900 truncate pr-4">🏅 {rankingWc.title}</h3>
-                                        <button onClick={() => setRankingWc(null)} className="p-2 opacity-40 text-xl font-bold shrink-0">✕</button>
-                                    </header>
-                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                                        {[...rankingWc.entries].sort((a, b) => (b.winCount || 0) - (a.winCount || 0)).map((entry, idx) => (
-                                            <div key={idx} className="p-3.5 bg-[#f0f5f9] rounded-[14px] flex items-center justify-between border border-transparent">
-                                                <div className="flex items-center gap-3 truncate text-left">
-                                                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 ${idx === 0 ? 'bg-[#ffca28] text-white shadow-md' : idx === 1 ? 'bg-gray-300 text-white' : idx === 2 ? 'bg-[#d7ccc8] text-white' : 'bg-gray-200 text-gray-600'}`}>
-                                                        {idx + 1}
-                                                    </span>
-                                                    <p className="font-bold text-[13px] text-gray-800 truncate">{entry.title}</p>
-                                                </div>
-                                                <div className="flex items-center gap-1 ml-4 shrink-0">
-                                                    <span className="font-bold text-[#4a90e2] text-[14px]">{entry.winCount || 0}</span>
-                                                    <span className="text-[10px] text-gray-400 font-bold ml-0.5">승</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <button onClick={() => setView('admin_auth')} className="fixed bottom-6 right-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.1)] active:scale-95 z-[60] border-none text-gray-600">⚙️</button>
-                    </div>
-                );
+        // --- 파이어베이스 연동 로직 ---
+        async function initFirebase() {
+            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                WORLD_CUPS = [...defaultCups];
+                isDbLoaded = true;
+                window.render();
+                return;
             }
 
-            if (view === 'admin_auth') return (
-                <div className="scroller-view items-center justify-center p-8 text-center">
-                    <span className="text-4xl mb-6 opacity-40">🔐</span>
-                    <h2 className="text-xl font-black mb-8 tracking-widest text-gray-800">ADMIN</h2>
-                    <input type="password" value={adminPw} onChange={e => setAdminPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && onAdminLogin()} className="w-full max-w-xs border-b-2 border-gray-300 py-4 text-center text-3xl tracking-[0.5em] outline-none focus:border-[#4a90e2] transition-colors bg-transparent font-mono" placeholder="****" autoFocus />
-                    <button onClick={onAdminLogin} className="w-full max-w-xs bg-[#4a90e2] py-4 rounded-xl active:scale-95 mt-8 text-white font-bold uppercase shadow-md border-none">LOGIN</button>
-                    <button onClick={() => setView('home')} className="mt-8 font-bold underline text-gray-400 text-xs uppercase">Back to Home</button>
-                </div>
-            );
-
-            if (view === 'admin') return (
-                <div className="scroller-view text-gray-900">
-                    <div className="px-5 py-8 w-full max-w-4xl mx-auto pb-40">
-                        <header className="flex justify-between items-center mb-8 shrink-0">
-                            <button onClick={() => { setView('home'); setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="text-2xl p-2 bg-white rounded-full shadow-sm text-gray-600">⬅️</button>
-                            <h1 className="font-black text-gray-500 text-[12px] uppercase tracking-widest">DASHBOARD</h1>
-                            <div className="w-10"></div>
-                        </header>
-                        
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-[24px] p-6 shadow-sm space-y-5">
-                                <h2 className="font-black text-[18px]">{editingId ? '✏️ 월드컵 수정' : '🚀 신규 월드컵 발행'}</h2>
-                                <div className="flex gap-2">
-                                    {['video', 'image', 'text'].map(type => (
-                                        <button key={type} onClick={() => setWcType(type)} className={`flex-1 py-3.5 rounded-xl font-bold text-[13px] border-2 transition-colors ${wcType === type ? 'border-[#4a90e2] bg-[#4a90e2] text-white' : 'border-[#f0f5f9] bg-[#f0f5f9] text-gray-500'}`}>
-                                            {type === 'video' ? '📹 영상' : type === 'image' ? '🖼️ 이미지' : '💬 대사'}
-                                        </button>
-                                    ))}
-                                </div>
-                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-[#f0f5f9] p-4 rounded-xl font-bold border-none outline-none focus:ring-2 focus:ring-[#4a90e2]/50 text-[15px]" placeholder="월드컵 제목 입력" />
-                                
-                                <div className="space-y-2">
-                                    <p className="text-[11px] font-bold text-gray-400 ml-1">입력 지원: 트위터 링크, 유튜브, .mp4 링크, iframe 태그</p>
-                                    <textarea 
-                                        value={bulkText} 
-                                        onChange={e => setBulkText(e.target.value)} 
-                                        className="w-full h-[280px] bg-[#f0f5f9] border-none rounded-xl p-5 font-mono text-[12px] outline-none leading-relaxed focus:ring-2 focus:ring-[#4a90e2]/50" 
-                                        placeholder={`[예시]\n\n제목1\nhttps://x.com/... (앱이 알아서 영상 추출! ✨)\n\n제목2\nhttps://youtu.be/...\n\n제목3\nhttps://...mp4`} 
-                                    />
-                                </div>
-
-                                <div className="flex gap-2 pt-2">
-                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="flex-1 bg-gray-200 py-4 rounded-xl font-bold text-[14px] text-gray-700 border-none">취소</button>}
-                                    <button onClick={onSaveWorldcup} className="flex-[2] bg-[#4a90e2] py-4 rounded-xl text-white font-bold text-[15px] shadow-md active:scale-95 border-none transition-transform">
-                                        {editingId ? '수정 내용 저장' : '새 월드컵 발행'}
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div className="pt-6 space-y-3">
-                                {worldcups.map(wc => (
-                                    <div key={wc.id} className={`p-4 bg-white rounded-[16px] flex items-center justify-between shadow-sm transition-opacity ${wc.status === 'hidden' ? 'opacity-50' : 'opacity-100'}`}>
-                                        <div className="flex items-center gap-3 truncate text-left pr-2">
-                                            <span className="text-[18px] shrink-0 bg-[#f0f5f9] w-8 h-8 rounded-full flex items-center justify-center">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
-                                            <span className="text-[14px] font-bold truncate text-gray-800">{wc.title}</span>
-                                        </div>
-                                        <div className="flex gap-1.5 shrink-0">
-                                            <button onClick={async () => { const next = wc.status === 'hidden' ? 'published' : 'hidden'; await window.fbStore.updateDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id), {status: next}); }} className="w-9 h-9 bg-[#f0f5f9] rounded-lg flex items-center justify-center text-[14px] border-none text-gray-600">{wc.status === 'hidden' ? '🙈' : '👁️'}</button>
-                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setWcType(wc.type || 'video'); setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-9 h-9 bg-[#f0f5f9] rounded-lg flex items-center justify-center text-[14px] border-none text-gray-600">✏️</button>
-                                            <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { await window.fbStore.deleteDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id)); } }} className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center text-[14px] text-red-500 border-none">🗑️</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            if (view === 'game') {
-                const totalM = Math.floor(currentRoundItems.length / 2);
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyupkwae-worldcup';
                 
-                return (
-                    <div className="game-overlay-fixed px-4 pb-4">
-                        {zoomUrl && (
-                            <div className="fixed inset-0 z-[1000] bg-black flex flex-col items-center justify-center p-2 modal-bg-ani" onClick={() => setZoomUrl(null)}>
-                                <div className="absolute top-10 right-6 z-[1001] w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold cursor-pointer">✕</div>
-                                <img src={zoomUrl} className="max-w-full max-h-[90vh] object-contain" alt="Full" />
-                            </div>
-                        )}
-                        
-                        <header className="relative flex flex-col items-center justify-center h-16 shrink-0 bg-transparent">
-                            <button onClick={() => setView('home')} className="absolute left-0 top-1/2 -translate-y-1/2 p-2 bg-transparent border-none">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                            </button>
-                            <h1 className="text-[16px] font-bold text-gray-900">{selectedWc?.title}</h1>
-                            {!champion && (
-                                <p className="text-[12px] text-gray-400 mt-0.5">{roundName} ({matchIndex + 1}/{totalM})</p>
-                            )}
-                        </header>
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                cupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'worldcups');
 
-                        {champion ? (
-                            <div className="flex-1 flex flex-col items-center text-center fade-in-ani overflow-hidden bg-transparent pt-4">
-                                <div className="mb-6 flex flex-col items-center shrink-0 w-full">
-                                    <div className="text-[40px] mb-2 drop-shadow-md">🏆</div>
-                                    <h2 className="text-[20px] font-black px-4 truncate max-w-sm text-gray-900 break-keep">{champion.title}</h2>
-                                    <div className="mt-3 px-4 py-1.5 bg-[#ffca28] rounded-full text-white font-bold text-[12px] shadow-sm">
-                                        우승 {champion.winCount || 0}회
-                                    </div>
-                                </div>
-                                
-                                <div className="flex-1 w-full max-w-md relative mb-8">
-                                    <div className="winner-inner bg-transparent rounded-[16px]">
-                                        <MediaContent item={champion} type={selectedWc.type} />
-                                    </div>
-                                </div>
-                                
-                                <div className="w-full flex justify-center shrink-0 max-w-md pb-6">
-                                    <button onClick={() => {setView('home'); setChampion(null); setRankingWc(null);}} className="w-full h-14 bg-[#4a90e2] rounded-[16px] shadow-md flex items-center justify-center border-none font-bold text-white text-[16px] active:scale-95 transition-transform">
-                                        홈으로 돌아가기
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="vs-container">
-                                    <div className="vs-item" onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])}>
-                                        <div className="vs-item-inner">
-                                            <MediaContent item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="vs-badge-wrapper">
-                                        <div className="vs-badge">VS</div>
-                                    </div>
-                                    
-                                    <div className="vs-item" onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])}>
-                                        <div className="vs-item-inner">
-                                            {currentRoundItems[matchIndex * 2 + 1] ? (
-                                                <MediaContent item={currentRoundItems[matchIndex * 2 + 1]} type={selectedWc.type} />
-                                            ) : (
-                                                <div className="text-gray-400 text-[13px] opacity-60 font-medium bg-transparent w-full h-full flex items-center justify-center rounded-[16px]">부전승</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-                                <footer className="shrink-0 grid grid-cols-2 gap-3 pb-6">
-                                    <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="w-full bg-white rounded-xl p-3.5 flex flex-col items-center justify-center shadow-sm active:scale-[0.98] transition-all border-2 border-transparent hover:border-[#ff4b4b]/30 h-full">
-                                        <span className="text-[#ff4b4b] text-[18px] mb-1">◀</span>
-                                        <span className="font-bold text-[13px] line-clamp-2 text-center break-keep text-gray-800">{currentRoundItems[matchIndex * 2]?.title}</span>
-                                    </button>
-                                    <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="w-full bg-white rounded-xl p-3.5 flex flex-col items-center justify-center shadow-sm active:scale-[0.98] transition-all border-2 border-transparent hover:border-[#4a90e2]/30 disabled:opacity-40 h-full">
-                                        <span className="text-[#4a90e2] text-[18px] mb-1">▶</span>
-                                        <span className="font-bold text-[13px] line-clamp-2 text-center break-keep text-gray-800">{currentRoundItems[matchIndex * 2 + 1]?.title || '부전승'}</span>
-                                    </button>
-                                </footer>
-                            </>
-                        )}
-                    </div>
-                );
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        onSnapshot(cupsCollectionRef, (snapshot) => {
+                            const loadedCups = [];
+                            snapshot.forEach((doc) => {
+                                loadedCups.push(doc.data());
+                            });
+                            
+                            loadedCups.sort((a, b) => a.id - b.id);
+                            
+                            if (loadedCups.length === 0) {
+                                WORLD_CUPS = [...defaultCups];
+                                defaultCups.forEach(cup => saveCupToDb(cup)); 
+                            } else {
+                                WORLD_CUPS = loadedCups;
+                            }
+                            
+                            isDbLoaded = true;
+                            window.render();
+                        }, (error) => {
+                            console.error("Firestore Error:", error);
+                            isDbLoaded = true;
+                            window.render();
+                        });
+                    }
+                });
+            } catch(e) {
+                console.error("Firebase init failed", e);
+                WORLD_CUPS = [...defaultCups];
+                isDbLoaded = true;
+                window.render();
+            }
+        }
+
+        async function saveCupToDb(cup) {
+            if (!db || !auth || !auth.currentUser) return;
+            try {
+                await setDoc(doc(cupsCollectionRef, cup.id.toString()), cup);
+            } catch(e) { console.error(e); }
+        }
+
+        async function deleteCupFromDb(cupId) {
+            if (!db || !auth || !auth.currentUser) return;
+            try {
+                await deleteDoc(doc(cupsCollectionRef, cupId.toString()));
+            } catch(e) { console.error(e); }
+        }
+
+        // --- UI 렌더링 함수 ---
+        window.render = function() {
+            if (!isDbLoaded) return; 
+            
+            const mainHeader = document.getElementById('main-header');
+            const headerTitle = document.getElementById('header-title');
+            
+            if (currentView === 'home') {
+                mainHeader.style.display = 'none';
+                window.renderHome();
+            } else if (currentView === 'game') {
+                mainHeader.style.display = 'block'; 
+                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">${selectedCup.title}</span>`;
+                window.renderGame();
+            } else if (currentView === 'result') {
+                mainHeader.style.display = 'block';
+                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">최종 결과</span>`;
+                window.renderResult();
+            } else if (currentView === 'admin') {
+                mainHeader.style.display = 'block';
+                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">관리자 모드</span>`;
+                window.renderAdmin();
             }
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // 전체 떡밥을 모아주는 가상의 마스터 월드컵 생성 함수
+        window.getMasterCup = function() {
+            let allItems = [];
+            WORLD_CUPS.forEach(cup => {
+                allItems = allItems.concat(cup.items);
+            });
+            
+            // 혹시 모를 중복 방지
+            const uniqueItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
+
+            return {
+                id: 'master',
+                title: "혚쾌 월드컵",
+                icon: "❣️",
+                items: uniqueItems
+            };
+        };
+
+        window.renderHome = function() {
+            const appContent = document.getElementById('app-content');
+            let html = `
+                <div class="px-5 pt-8 pb-12 fade-in">
+                    <div class="text-center mb-10 mt-4">
+                        <h2 class="text-3xl font-black tracking-tight text-gray-900">혚쾌 월드컵</h2>
+                    </div>
+                    <div class="flex flex-col gap-3">
+            `;
+
+            // --- 1. 최상단: 모든 떡밥 총합 마스터 월드컵 렌더링 ---
+            const masterCup = window.getMasterCup();
+            const masterDisabledStr = masterCup.items.length < 2 ? `onclick="window.showAlert('항목이 최소 2개 이상 필요합니다.')"` : `onclick="window.showBracketModal('master')"`;
+            html += `
+                <div ${masterDisabledStr} class="bg-white/70 backdrop-blur-md rounded-[20px] p-4 flex items-center card-shadow border border-white/80 cursor-pointer hover:bg-white transition-colors mb-2">
+                    <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-xl mr-4 border border-gray-100 shadow-sm flex-shrink-0">
+                        ${masterCup.icon}
+                    </div>
+                    <div class="flex-grow text-left min-w-0">
+                        <h3 class="font-bold text-gray-900 text-[16px] mb-0.5 truncate w-full">${masterCup.title}</h3>
+                        <p class="text-[12px] text-blue-600 font-medium">모든 떡밥 총집합 (<span class="font-bold">${masterCup.items.length}</span>개)</p>
+                    </div>
+                    <div class="text-blue-500 text-sm pl-2 flex-shrink-0">
+                        <i class="fa-solid fa-arrow-right transform -rotate-45"></i>
+                    </div>
+                </div>
+            `;
+
+            // --- 2. 하단: 개별 월드컵 렌더링 ---
+            WORLD_CUPS.forEach(cup => {
+                const disabledStr = cup.items.length < 2 ? `onclick="window.showAlert('항목이 최소 2개 이상 필요합니다.')"` : `onclick="window.showBracketModal(${cup.id})"`;
+                html += `
+                    <div ${disabledStr} class="bg-white/70 backdrop-blur-md rounded-[20px] p-4 flex items-center card-shadow border border-white/80 cursor-pointer hover:bg-white transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-xl mr-4 border border-gray-100 shadow-sm flex-shrink-0">
+                            ${cup.icon}
+                        </div>
+                        <div class="flex-grow text-left min-w-0">
+                            <h3 class="font-bold text-gray-800 text-[15px] mb-0.5 truncate w-full">${cup.title}</h3>
+                            <p class="text-[12px] text-gray-400">총 <span class="text-blue-500 font-bold">${cup.items.length}</span>개의 떡밥</p>
+                        </div>
+                        <div class="text-blue-400 text-sm pl-2 flex-shrink-0">
+                            <i class="fa-solid fa-arrow-right transform -rotate-45"></i>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="text-center mt-12 flex justify-center gap-6 items-center">
+                        <button onclick="window.goAdmin()" class="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition">
+                            <i class="fa-solid fa-gear mr-1"></i> 관리자 모드
+                        </button>
+                    </div>
+                </div>
+            `;
+            appContent.innerHTML = html;
+        };
+
+        window.showBracketModal = function(cupId) {
+            const cup = cupId === 'master' ? window.getMasterCup() : WORLD_CUPS.find(c => c.id === cupId);
+            if (!cup) return;
+
+            const totalItems = cup.items.length;
+            if (totalItems < 2) return window.showAlert('항목이 부족합니다.');
+
+            document.getElementById('bracket-modal-title').innerText = cup.title;
+
+            let optionsHtml = '';
+            let validSizes = [4, 8, 16, 32, 64, 128].filter(size => size <= totalItems);
+            if (totalItems >= 2 && totalItems < 4) validSizes = [2]; 
+
+            validSizes.reverse().forEach(size => {
+                const label = size === 2 ? '결승전' : `${size}강`;
+                const cupIdArg = cupId === 'master' ? "'master'" : cup.id;
+                optionsHtml += `<button onclick="window.startCup(${cupIdArg}, ${size})" class="py-3 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition-colors">${label}</button>`;
+            });
+
+            document.getElementById('bracket-options').innerHTML = optionsHtml;
+
+            const modal = document.getElementById('bracket-modal');
+            const modalContent = document.getElementById('bracket-modal-content');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeBracketModal = function() {
+            const modal = document.getElementById('bracket-modal');
+            const modalContent = document.getElementById('bracket-modal-content');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        };
+
+        window.renderAdmin = function() {
+            const appContent = document.getElementById('app-content');
+            let optionsHtml = WORLD_CUPS.map(cup => `<option value="${cup.id}">${cup.icon} ${cup.title}</option>`).join('');
+            if(WORLD_CUPS.length === 0) optionsHtml = `<option value="">월드컵이 없습니다. 새로 만들어주세요.</option>`;
+
+            appContent.innerHTML = `
+                <div class="px-5 pt-8 pb-12 fade-in">
+                    <div class="bg-white/80 backdrop-blur-md rounded-[20px] p-6 card-shadow border border-white">
+                        
+                        <div class="mb-6 p-4 bg-gray-50/80 rounded-xl border border-gray-200">
+                            <h4 class="font-bold text-gray-800 text-sm mb-3"><i class="fa-solid fa-folder-plus text-blue-500 mr-1"></i> 새 월드컵 만들기</h4>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="new-cup-icon" placeholder="🏆" value="🏆" class="w-14 bg-white border border-gray-200 rounded-lg px-2 py-2 text-center text-sm focus:outline-none focus:border-blue-500">
+                                <input type="text" id="new-cup-title" placeholder="월드컵 이름 (예: 레전드 직캠)" class="flex-grow bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                            <button onclick="window.addNewCup()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-sm transition-colors">새 월드컵 추가</button>
+                        </div>
+
+                        <hr class="my-6 border-gray-200">
+
+                        <div class="mb-5">
+                            <label class="block text-sm font-bold text-gray-700 mb-1.5">관리할 월드컵 선택</label>
+                            <div class="flex gap-2">
+                                <select id="admin-cup-id" onchange="window.updateAdminList()" class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors min-w-0 truncate">
+                                    ${optionsHtml}
+                                </select>
+                                <button onclick="window.deleteCup()" class="px-4 bg-red-50 text-red-500 font-bold rounded-xl text-sm border border-red-100 hover:bg-red-100 whitespace-nowrap transition-colors flex-shrink-0">삭제</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <label class="block text-sm font-bold text-gray-700 mb-1.5 flex justify-between items-end">
+                                <span>떡밥 일괄 등록</span>
+                                <span class="text-[10px] text-gray-400 font-normal">타이틀 띄우고 링크 입력</span>
+                            </label>
+                            <textarea id="admin-bulk" rows="6" placeholder="240717 사운드베리\nhttps://twitter.com/..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors hide-scrollbar leading-relaxed"></textarea>
+                        </div>
+
+                        <button id="admin-submit-btn" onclick="window.addBulkItems()" class="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-bold rounded-xl shadow-sm transition-colors flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> 한 번에 등록하기
+                        </button>
+
+                        <hr class="my-6 border-gray-200">
+
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-gray-800 text-sm">현재 등록된 떡밥 목록</h3>
+                            <span id="admin-item-count" class="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-md"></span>
+                        </div>
+                        <div id="admin-item-list" class="flex flex-col gap-2 max-h-52 overflow-y-auto hide-scrollbar">
+                            <!-- JS 렌더링 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(window.updateAdminList, 0);
+        };
+
+        window.addNewCup = async function() {
+            const title = document.getElementById('new-cup-title').value.trim();
+            const icon = document.getElementById('new-cup-icon').value.trim() || '🏆';
+            
+            if(!title) return window.showAlert("월드컵 이름을 입력해주세요.");
+            
+            const newCup = {
+                id: Date.now(),
+                title: title,
+                description: "",
+                icon: icon,
+                isFeatured: false,
+                items: []
+            };
+            
+            WORLD_CUPS.push(newCup);
+            window.renderAdmin();
+            await saveCupToDb(newCup);
+            window.showAlert(`[${icon} ${title}] 월드컵이 생성되었습니다!`);
+        };
+
+        window.deleteCup = function() {
+            const selectEl = document.getElementById('admin-cup-id');
+            if(!selectEl || !selectEl.value) return window.showAlert('삭제할 월드컵을 선택해주세요.');
+            
+            const cupId = parseInt(selectEl.value);
+            if(isNaN(cupId)) return window.showAlert('삭제할 월드컵을 선택해주세요.');
+
+            const index = WORLD_CUPS.findIndex(c => c.id === cupId);
+            if(index > -1) {
+                window.showConfirm(`정말 삭제하시겠습니까?`, async () => {
+                    WORLD_CUPS.splice(index, 1);
+                    window.renderAdmin();
+                    await deleteCupFromDb(cupId);
+                });
+            }
+        };
+
+        window.addBulkItems = async function() {
+            const cupId = parseInt(document.getElementById('admin-cup-id').value);
+            if(isNaN(cupId)) return window.showAlert('월드컵을 먼저 생성하고 선택해주세요.');
+
+            const text = document.getElementById('admin-bulk').value;
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            
+            let itemsToAdd = [];
+            let currentTitle = "";
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                if (line.startsWith('http') || line.includes('twitter.com') || line.includes('x.com') || line.includes('twimg.com')) {
+                    if (!line.startsWith('http')) line = 'https://' + line;
+
+                    if (currentTitle) {
+                        let dateMatch = currentTitle.match(/^(\d{6})\s+(.*)/);
+                        let date = "";
+                        let name = currentTitle;
+                        if(dateMatch) {
+                            date = dateMatch[1];
+                            name = dateMatch[2];
+                        }
+
+                        // 다이렉트 이미지/영상 링크(pbs.twimg 등) 판별 로직 추가
+                        let isDirectMedia = line.includes('pbs.twimg.com') || line.match(/\.(jpeg|jpg|gif|png|webp|mp4)(\?.*)?$/i);
+                        let mediaUrl = isDirectMedia ? line : null;
+                        let isVideo = line.includes('.mp4');
+
+                        itemsToAdd.push({
+                            id: Date.now() + i,
+                            name: name,
+                            date: date,
+                            sourceUrl: line,
+                            mediaUrl: mediaUrl,
+                            isVideo: isVideo,
+                            emoji: ""
+                        });
+                        currentTitle = "";
+                    }
+                } else {
+                    currentTitle = line;
+                }
+            }
+
+            if (itemsToAdd.length === 0) {
+                return window.showAlert("형식에 맞는 데이터가 없습니다.\n\n[타이틀]\n[링크]\n형태로 줄바꿈하여 입력해주세요.");
+            }
+
+            const cup = WORLD_CUPS.find(c => c.id === cupId);
+            cup.items.push(...itemsToAdd);
+            
+            document.getElementById('admin-bulk').value = '';
+            window.updateAdminList();
+            
+            await saveCupToDb(cup);
+            window.showAlert(`성공!\n총 ${itemsToAdd.length}개의 항목이 추가되었습니다.`);
+        };
+
+        window.updateAdminList = function() {
+            const selectEl = document.getElementById('admin-cup-id');
+            const listContainer = document.getElementById('admin-item-list');
+            const countBadge = document.getElementById('admin-item-count');
+            
+            if(!selectEl) return;
+            const cupId = parseInt(selectEl.value);
+
+            if (isNaN(cupId)) {
+                countBadge.innerText = '0개';
+                listContainer.innerHTML = `<div class="text-center py-6 text-sm text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">선택된 월드컵이 없습니다.</div>`;
+                return;
+            }
+
+            const cup = WORLD_CUPS.find(c => c.id === cupId);
+            if (!cup) return;
+
+            countBadge.innerText = `${cup.items.length}개`;
+
+            if (cup.items.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-6 text-sm text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">항목이 없습니다.</div>`;
+                return;
+            }
+
+            listContainer.innerHTML = cup.items.map(item => `
+                <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-between border border-gray-100 group gap-2">
+                    <div class="flex items-center gap-3 flex-grow min-w-0">
+                        <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center flex-shrink-0 text-sm overflow-hidden text-blue-400">
+                            ${item.mediaUrl ? (item.isVideo ? '<i class="fa-solid fa-video"></i>' : '<i class="fa-solid fa-image"></i>') : (item.sourceUrl ? '<i class="fa-brands fa-twitter"></i>' : item.emoji)}
+                        </div>
+                        <div class="flex flex-col min-w-0 flex-grow">
+                            <span class="font-bold text-gray-800 text-sm truncate block w-full">${item.name}</span>
+                            <span class="text-[10px] text-gray-400 truncate block w-full">${item.date || '날짜 미상'}</span>
+                        </div>
+                    </div>
+                    <button onclick="window.deleteItem(${cup.id}, ${item.id})" class="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors flex-shrink-0">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.deleteItem = function(cupId, itemId) {
+            window.showConfirm('이 항목을 삭제하시겠습니까?', async () => {
+                const cup = WORLD_CUPS.find(c => c.id === cupId);
+                cup.items = cup.items.filter(i => i.id !== itemId);
+                window.updateAdminList();
+                await saveCupToDb(cup);
+            });
+        };
+
+        // --- 지연 로딩 (Lazy Load) 및 미디어 렌더링 ---
+        function getMediaInnerHtml(item, isResult = false) {
+            if (item.mediaUrl === 'error') {
+                return `<div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-gray-100 text-gray-400"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><span class="text-xs">미디어 없음</span></div>`;
+            }
+            if (item.sourceUrl && !item.mediaUrl) {
+                return `<div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-gray-50"><i class="fa-solid fa-spinner fa-spin text-3xl text-gray-300"></i></div>`;
+            }
+            if (item.mediaUrl) {
+                let html = '';
+                if (item.isVideo) {
+                    html += `<video src="${item.mediaUrl}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+                             <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10"></div>
+                             <i class="fa-solid fa-video text-white/80 absolute top-4 right-4 text-sm drop-shadow-md z-10"></i>`;
+                } else {
+                    html += `<img src="${item.mediaUrl}" class="absolute inset-0 w-full h-full object-cover" />
+                             <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>`;
+                }
+                if (!isResult) {
+                    html += `<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-20"><span class="text-white font-bold bg-black/60 px-4 py-2 rounded-full text-sm backdrop-blur-sm"><i class="fa-solid fa-expand mr-1"></i> 크게 보기</span></div>`;
+                }
+                return html;
+            }
+            const sizeClass = isResult ? 'text-8xl mb-6 drop-shadow-md animate-bounce' : 'text-6xl mb-2 drop-shadow-sm';
+            return `<div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center"><span class="${sizeClass}">${item.emoji}</span></div>`;
+        }
+
+        async function loadMediaIfNeeded(item, containerId, isResult = false) {
+            if (item.mediaUrl) {
+                const container = document.getElementById(containerId);
+                if (container) container.innerHTML = getMediaInnerHtml(item, isResult);
+                return;
+            }
+            if (!item.sourceUrl) return; 
+
+            // 혹시라도 초기화 시 다이렉트 URL 판별이 누락된 경우를 위한 방어 로직
+            if (item.sourceUrl.includes('pbs.twimg.com') || item.sourceUrl.match(/\.(jpeg|jpg|gif|png|webp|mp4)(\?.*)?$/i)) {
+                item.mediaUrl = item.sourceUrl;
+                item.isVideo = item.sourceUrl.includes('.mp4');
+                if(selectedCup) {
+                    if (selectedCup.id === 'master') {
+                        // 통합 월드컵 진행 중에는 해당 떡밥이 원래 속한 월드컵을 찾아 DB에 저장
+                        let origCup = WORLD_CUPS.find(c => c.items.some(i => i.id === item.id));
+                        if(origCup) saveCupToDb(origCup);
+                    } else {
+                        saveCupToDb(selectedCup); 
+                    }
+                }
+                const container = document.getElementById(containerId);
+                if (container) container.innerHTML = getMediaInnerHtml(item, isResult);
+                return;
+            }
+
+            try {
+                const urlObj = new URL(item.sourceUrl);
+                const apiUrl = `https://api.vxtwitter.com${urlObj.pathname}`;
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                
+                if (data.mediaURLs && data.mediaURLs.length > 0) {
+                    item.mediaUrl = data.mediaURLs[0];
+                    item.isVideo = item.mediaUrl.endsWith('.mp4');
+                    if(selectedCup) {
+                        if (selectedCup.id === 'master') {
+                            let origCup = WORLD_CUPS.find(c => c.items.some(i => i.id === item.id));
+                            if(origCup) saveCupToDb(origCup);
+                        } else {
+                            saveCupToDb(selectedCup); 
+                        }
+                    }
+                } else {
+                    item.mediaUrl = 'error'; 
+                }
+            } catch (e) {
+                item.mediaUrl = 'error';
+            }
+            
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = getMediaInnerHtml(item, isResult);
+            }
+        }
+
+        // === 게임 화면 ===
+        window.renderGame = function() {
+            const appContent = document.getElementById('app-content');
+            if (!selectedCup || roundItems.length === 0) return;
+
+            const totalRounds = roundItems.length;
+            const currentRoundName = totalRounds === 2 ? '결승전' : `${totalRounds}강`;
+            const currentMatchNum = Math.floor(matchIndex / 2) + 1;
+            const totalMatchesNum = totalRounds / 2;
+
+            const item1 = roundItems[matchIndex];
+            const item2 = roundItems[matchIndex + 1];
+
+            const html = `
+                <div class="px-5 pt-6 pb-8 fade-in h-full flex flex-col">
+                    <div class="text-center mb-8">
+                        <p class="text-gray-400 text-sm mt-1 font-medium">${currentRoundName} ${currentMatchNum}/${totalMatchesNum}</p>
+                        <div class="inline-flex gap-2 mt-3 items-center">
+                            <div class="px-3 py-1 bg-gray-200/50 text-gray-400 text-[11px] font-bold rounded-full tracking-wider">AUTO OFF</div>
+                            <button onclick="window.goHome()" class="px-3 py-1 bg-blue-50 text-blue-500 hover:bg-blue-100 text-[11px] font-bold rounded-full tracking-wider transition-colors flex items-center gap-1">
+                                <i class="fa-solid fa-house"></i> 메인으로
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative flex justify-center items-center gap-3 mb-10 h-[35vh]">
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center font-black text-xs shadow-md text-gray-800 border border-gray-100">VS</div>
+
+                        <div onclick="window.openMediaById(${item1.id})" id="img-card-${item1.id}" class="select-transition flex-1 h-full bg-gray-800 rounded-[24px] shadow-sm relative overflow-hidden cursor-pointer group bg-gray-100">
+                            ${getMediaInnerHtml(item1)}
+                        </div>
+
+                        <div onclick="window.openMediaById(${item2.id})" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-800 rounded-[24px] shadow-sm relative overflow-hidden cursor-pointer group bg-gray-100">
+                            ${getMediaInnerHtml(item2)}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 mt-auto">
+                        <button onclick="window.handlePick(${item1.id})" id="btn-${item1.id}" class="select-transition w-full bg-white/80 backdrop-blur-sm rounded-[20px] p-5 text-left card-shadow border border-white flex justify-between items-center cursor-pointer hover:bg-white">
+                            <span class="font-bold text-gray-800 text-[15px] flex items-center gap-2 truncate pr-2">
+                                ${item1.emoji ? item1.emoji + ' ' : ''}${item1.name}
+                            </span>
+                            <span class="text-xs text-gray-300 font-medium flex-shrink-0">${item1.date || ''}</span>
+                        </button>
+
+                        <button onclick="window.handlePick(${item2.id})" id="btn-${item2.id}" class="select-transition w-full bg-white/80 backdrop-blur-sm rounded-[20px] p-5 text-left card-shadow border border-white flex justify-between items-center cursor-pointer hover:bg-white">
+                            <span class="font-bold text-gray-800 text-[15px] flex items-center gap-2 truncate pr-2">
+                                ${item2.emoji ? item2.emoji + ' ' : ''}${item2.name}
+                            </span>
+                            <span class="text-xs text-gray-300 font-medium flex-shrink-0">${item2.date || ''}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            appContent.innerHTML = html;
+
+            loadMediaIfNeeded(item1, `img-card-${item1.id}`);
+            loadMediaIfNeeded(item2, `img-card-${item2.id}`);
+        };
+
+        // === 결과 화면 ===
+        window.renderResult = function() {
+            const appContent = document.getElementById('app-content');
+            const html = `
+                <div class="px-5 pt-10 pb-12 fade-in text-center flex flex-col h-full justify-center">
+                    <div class="mb-4 inline-flex items-center space-x-1.5 bg-blue-50 text-blue-500 px-3 py-1.5 rounded-full font-bold text-sm mx-auto">
+                        <i class="fa-solid fa-crown"></i>
+                        <span>최종 우승</span>
+                    </div>
+                    
+                    <div onclick="window.openWinnerMedia()" id="img-card-winner" class="w-full max-w-[280px] mx-auto aspect-square bg-gray-800 rounded-[32px] shadow-lg relative overflow-hidden mb-8 transform hover:scale-105 transition-transform duration-500 bg-gray-100 cursor-pointer group">
+                        ${getMediaInnerHtml(winner, true)}
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-20"><span class="text-white font-bold bg-black/60 px-4 py-2 rounded-full text-sm backdrop-blur-sm"><i class="fa-solid fa-expand mr-1"></i> 크게 보기</span></div>
+                    </div>
+
+                    <div class="bg-white/80 rounded-[20px] p-5 card-shadow border border-white mb-8">
+                        <h3 class="font-black text-xl text-gray-800 mb-1">${winner.emoji ? winner.emoji + ' ' : ''}${winner.name}</h3>
+                        <p class="text-gray-400 text-sm font-medium">Date: ${winner.date || 'Unknown'}</p>
+                    </div>
+
+                    <div class="flex flex-col gap-3 w-full">
+                        <button onclick="window.showBracketModal(${selectedCup.id})" class="w-full py-4 bg-white text-gray-800 font-bold rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i> 다시 하기
+                        </button>
+                        <button onclick="window.goHome()" class="w-full py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-house"></i> 메인으로 돌아가기
+                        </button>
+                    </div>
+                </div>
+            `;
+            appContent.innerHTML = html;
+            
+            loadMediaIfNeeded(winner, `img-card-winner`, true);
+        };
+
+        // --- 상호작용 코어 ---
+        window.startCup = function(cupId, size) {
+            window.closeBracketModal();
+            selectedCup = cupId === 'master' ? window.getMasterCup() : WORLD_CUPS.find(c => c.id === cupId);
+            
+            let itemsToPlay = [...selectedCup.items].sort(() => Math.random() - 0.5);
+            roundItems = itemsToPlay.slice(0, size);
+            nextRoundItems = [];
+            matchIndex = 0;
+            currentView = 'game';
+            
+            setTimeout(window.render, 300);
+        };
+
+        window.handlePick = function(itemId) {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            const selectedItem = roundItems.find(i => i.id === itemId);
+            const otherItem = roundItems.find(i => i.id !== itemId && (i === roundItems[matchIndex] || i === roundItems[matchIndex + 1]));
+
+            document.getElementById(`img-card-${selectedItem.id}`).classList.add('selected-item');
+            document.getElementById(`btn-${selectedItem.id}`).classList.add('selected-item');
+            document.getElementById(`img-card-${otherItem.id}`).classList.add('unselected-item');
+            document.getElementById(`btn-${otherItem.id}`).classList.add('unselected-item');
+
+            setTimeout(() => {
+                nextRoundItems.push(selectedItem);
+                
+                if (matchIndex + 2 >= roundItems.length) {
+                    if (nextRoundItems.length === 1) {
+                        winner = nextRoundItems[0];
+                        currentView = 'result';
+                    } else {
+                        roundItems = [...nextRoundItems];
+                        nextRoundItems = [];
+                        matchIndex = 0;
+                    }
+                } else {
+                    matchIndex += 2;
+                }
+                
+                isTransitioning = false;
+                window.render();
+            }, 500);
+        };
+
+        window.goHome = function() {
+            selectedCup = null;
+            winner = null;
+            roundItems = [];
+            nextRoundItems = [];
+            matchIndex = 0;
+            currentView = 'home';
+            window.render();
+        };
+
+        window.goAdmin = function() {
+            window.showPasswordPrompt(() => {
+                currentView = 'admin';
+                window.render();
+            });
+        };
+
+        // --- 원본 미디어 크게 보기 모달 로직 ---
+        window.openMediaById = function(itemId) {
+            const item = roundItems.find(i => i.id === itemId);
+            if (item && item.mediaUrl && item.mediaUrl !== 'error') {
+                window.showFullMedia(item.mediaUrl, item.isVideo);
+            }
+        };
+
+        window.openWinnerMedia = function() {
+            if (winner && winner.mediaUrl && winner.mediaUrl !== 'error') {
+                window.showFullMedia(winner.mediaUrl, winner.isVideo);
+            }
+        };
+
+        window.showFullMedia = function(mediaUrl, isVideo) {
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('media-modal-content');
+            
+            if (isVideo) {
+                // 비디오면 controls 옵션을 추가해 재생바를 조작할 수 있게 합니다
+                content.innerHTML = `<video src="${mediaUrl}" controls autoplay playsinline class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain"></video>`;
+            } else {
+                content.innerHTML = `<img src="${mediaUrl}" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain" />`;
+            }
+            
+            modal.classList.remove('hidden');
+        };
+
+        window.closeFullMedia = function() {
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('media-modal-content');
+            modal.classList.add('hidden');
+            content.innerHTML = ''; // 모달 닫을 때 내부를 비워서 영상 재생 정지
+        };
+
+        // 앱 시작 시 파이어베이스 초기화
+        initFirebase();
     </script>
 </body>
 </html>
+
+
+
+
 
 
