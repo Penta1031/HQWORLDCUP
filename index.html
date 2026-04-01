@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>혚쾌 월드컵</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Pretendard Font -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
     <script>
@@ -41,7 +38,6 @@
 </head>
 <body class="text-gray-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- 상단 헤더 -->
     <header id="main-header" class="sticky top-0 z-50 bg-white/40 backdrop-blur-md" style="display: none;">
         <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
             <button onclick="window.goHome()" class="text-gray-600 hover:text-black p-2 -ml-2">
@@ -50,11 +46,9 @@
             <div class="text-center flex-grow">
                 <h1 class="font-bold text-lg tracking-tight truncate w-full px-2" id="header-title">혚쾌 월드컵</h1>
             </div>
-            <div class="w-8"></div> <!-- 균형을 위한 빈 공간 -->
-        </div>
+            <div class="w-8"></div> </div>
     </header>
 
-    <!-- 메인 콘텐츠 영역 -->
     <main id="app-content" class="max-w-md mx-auto w-full flex-grow relative pb-10">
         <div class="flex flex-col items-center justify-center h-[50vh] text-blue-500">
             <i class="fa-solid fa-spinner fa-spin text-4xl mb-3"></i>
@@ -62,7 +56,6 @@
         </div>
     </main>
 
-    <!-- N강 선택 모달 -->
     <div id="bracket-modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="bracket-modal-content">
             <div class="text-center mb-6">
@@ -70,27 +63,33 @@
                 <p class="text-sm text-gray-500">몇 강으로 진행할까요?</p>
             </div>
             <div class="grid grid-cols-2 gap-3" id="bracket-options">
-                <!-- JS 렌더링 -->
-            </div>
+                </div>
             <button onclick="window.closeBracketModal()" class="mt-6 w-full py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
         </div>
     </div>
 
-    <!-- 원본 미디어 보기 모달 (새로 추가) -->
     <div id="media-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 fade-in" onclick="window.closeFullMedia()">
         <button class="absolute top-4 right-4 text-white hover:text-gray-300 z-[210] p-2" onclick="window.closeFullMedia()">
             <i class="fa-solid fa-xmark text-3xl"></i>
         </button>
         <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()">
-            <!-- JS 렌더링 (이미지 또는 비디오) -->
-        </div>
+            </div>
     </div>
 
-    <!-- 파이어베이스 실시간 DB 연동 스크립트 -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        // --- 사용자가 찾은 파이어베이스 설정 ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLCJ2RXCl6u-oPicWPjRo8K5in_xmkotg",
+            authDomain: "hqworldcup-46819.firebaseapp.com",
+            projectId: "hqworldcup-46819",
+            storageBucket: "hqworldcup-46819.firebasestorage.app",
+            messagingSenderId: "848322844401",
+            appId: "1:848322844401:web:66d7c4fbf1fcb6def8bb50"
+        };
 
         // --- 초기 기본 데이터 설정 ---
         const defaultCups = [
@@ -138,7 +137,6 @@
                 icon: "🏆",
                 isFeatured: false,
                 items: [
-                    // 방금 올려주신 pbs.twimg.com 다이렉트 이미지 링크 데이터
                     { id: 401, name: "승혀비형이 해준 미역국", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOPaQAAvS-W?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOPaQAAvS-W?format=jpg&name=large", isVideo: false },
                     { id: 402, name: "저기저기 잠시만 렌즈좀 봐봐", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOAakAAj9X0?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOAakAAj9X0?format=jpg&name=large", isVideo: false },
                     { id: 403, name: "난잘못없어...승협이형이 유혹했어...", date: "", sourceUrl: "https://pbs.twimg.com/media/G_mawOtaEAASfia?format=jpg&name=large", mediaUrl: "https://pbs.twimg.com/media/G_mawOtaEAASfia?format=jpg&name=large", isVideo: false },
@@ -246,29 +244,14 @@
             input.onkeypress = (e) => { if (e.key === 'Enter') submit(); };
         };
 
-        // --- 파이어베이스 연동 로직 ---
         async function initFirebase() {
-            if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-                WORLD_CUPS = [...defaultCups];
-                isDbLoaded = true;
-                window.render();
-                return;
-            }
-
             try {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyupkwae-worldcup';
-                
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                cupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'worldcups');
+                cupsCollectionRef = collection(db, 'worldcups');
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -298,6 +281,7 @@
                 });
             } catch(e) {
                 console.error("Firebase init failed", e);
+                window.showAlert("데이터베이스 연결에 실패했습니다.");
                 WORLD_CUPS = [...defaultCups];
                 isDbLoaded = true;
                 window.render();
@@ -318,7 +302,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- UI 렌더링 함수 ---
         window.render = function() {
             if (!isDbLoaded) return; 
             
@@ -343,14 +326,12 @@
             }
         };
 
-        // 전체 떡밥을 모아주는 가상의 마스터 월드컵 생성 함수
         window.getMasterCup = function() {
             let allItems = [];
             WORLD_CUPS.forEach(cup => {
                 allItems = allItems.concat(cup.items);
             });
             
-            // 혹시 모를 중복 방지
             const uniqueItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
 
             return {
@@ -371,7 +352,6 @@
                     <div class="flex flex-col gap-3">
             `;
 
-            // --- 1. 최상단: 모든 떡밥 총합 마스터 월드컵 렌더링 ---
             const masterCup = window.getMasterCup();
             const masterDisabledStr = masterCup.items.length < 2 ? `onclick="window.showAlert('항목이 최소 2개 이상 필요합니다.')"` : `onclick="window.showBracketModal('master')"`;
             html += `
@@ -389,7 +369,6 @@
                 </div>
             `;
 
-            // --- 2. 하단: 개별 월드컵 렌더링 ---
             WORLD_CUPS.forEach(cup => {
                 const disabledStr = cup.items.length < 2 ? `onclick="window.showAlert('항목이 최소 2개 이상 필요합니다.')"` : `onclick="window.showBracketModal(${cup.id})"`;
                 html += `
@@ -507,8 +486,7 @@
                             <span id="admin-item-count" class="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-md"></span>
                         </div>
                         <div id="admin-item-list" class="flex flex-col gap-2 max-h-52 overflow-y-auto hide-scrollbar">
-                            <!-- JS 렌더링 -->
-                        </div>
+                            </div>
                     </div>
                 </div>
             `;
@@ -577,7 +555,6 @@
                             name = dateMatch[2];
                         }
 
-                        // 다이렉트 이미지/영상 링크(pbs.twimg 등) 판별 로직 추가
                         let isDirectMedia = line.includes('pbs.twimg.com') || line.match(/\.(jpeg|jpg|gif|png|webp|mp4)(\?.*)?$/i);
                         let mediaUrl = isDirectMedia ? line : null;
                         let isVideo = line.includes('.mp4');
@@ -663,7 +640,6 @@
             });
         };
 
-        // --- 지연 로딩 (Lazy Load) 및 미디어 렌더링 ---
         function getMediaInnerHtml(item, isResult = false) {
             if (item.mediaUrl === 'error') {
                 return `<div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-gray-100 text-gray-400"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><span class="text-xs">미디어 없음</span></div>`;
@@ -698,13 +674,11 @@
             }
             if (!item.sourceUrl) return; 
 
-            // 혹시라도 초기화 시 다이렉트 URL 판별이 누락된 경우를 위한 방어 로직
             if (item.sourceUrl.includes('pbs.twimg.com') || item.sourceUrl.match(/\.(jpeg|jpg|gif|png|webp|mp4)(\?.*)?$/i)) {
                 item.mediaUrl = item.sourceUrl;
                 item.isVideo = item.sourceUrl.includes('.mp4');
                 if(selectedCup) {
                     if (selectedCup.id === 'master') {
-                        // 통합 월드컵 진행 중에는 해당 떡밥이 원래 속한 월드컵을 찾아 DB에 저장
                         let origCup = WORLD_CUPS.find(c => c.items.some(i => i.id === item.id));
                         if(origCup) saveCupToDb(origCup);
                     } else {
@@ -747,7 +721,6 @@
             }
         }
 
-        // === 게임 화면 ===
         window.renderGame = function() {
             const appContent = document.getElementById('app-content');
             if (!selectedCup || roundItems.length === 0) return;
@@ -807,7 +780,6 @@
             loadMediaIfNeeded(item2, `img-card-${item2.id}`);
         };
 
-        // === 결과 화면 ===
         window.renderResult = function() {
             const appContent = document.getElementById('app-content');
             const html = `
@@ -828,7 +800,7 @@
                     </div>
 
                     <div class="flex flex-col gap-3 w-full">
-                        <button onclick="window.showBracketModal(${selectedCup.id})" class="w-full py-4 bg-white text-gray-800 font-bold rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center gap-2">
+                        <button onclick="window.showBracketModal(${selectedCup.id === 'master' ? "'master'" : selectedCup.id})" class="w-full py-4 bg-white text-gray-800 font-bold rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center gap-2">
                             <i class="fa-solid fa-rotate-right"></i> 다시 하기
                         </button>
                         <button onclick="window.goHome()" class="w-full py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2">
@@ -842,7 +814,6 @@
             loadMediaIfNeeded(winner, `img-card-winner`, true);
         };
 
-        // --- 상호작용 코어 ---
         window.startCup = function(cupId, size) {
             window.closeBracketModal();
             selectedCup = cupId === 'master' ? window.getMasterCup() : WORLD_CUPS.find(c => c.id === cupId);
@@ -906,7 +877,6 @@
             });
         };
 
-        // --- 원본 미디어 크게 보기 모달 로직 ---
         window.openMediaById = function(itemId) {
             const item = roundItems.find(i => i.id === itemId);
             if (item && item.mediaUrl && item.mediaUrl !== 'error') {
@@ -925,7 +895,6 @@
             const content = document.getElementById('media-modal-content');
             
             if (isVideo) {
-                // 비디오면 controls 옵션을 추가해 재생바를 조작할 수 있게 합니다
                 content.innerHTML = `<video src="${mediaUrl}" controls autoplay playsinline class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain"></video>`;
             } else {
                 content.innerHTML = `<img src="${mediaUrl}" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain" />`;
@@ -938,17 +907,12 @@
             const modal = document.getElementById('media-modal');
             const content = document.getElementById('media-modal-content');
             modal.classList.add('hidden');
-            content.innerHTML = ''; // 모달 닫을 때 내부를 비워서 영상 재생 정지
+            content.innerHTML = ''; 
         };
 
-        // 앱 시작 시 파이어베이스 초기화
         initFirebase();
     </script>
 </body>
 </html>
-
-
-
-
 
 
