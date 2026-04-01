@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🏆 HQ WORLDCUP 🏆</title>
+    <title>HQ 월드컵</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -49,67 +49,138 @@
     <style>
         :root { --safe-bottom: env(safe-area-inset-bottom, 24px); }
         html, body { 
-            background-color: white; color: black; margin: 0; padding: 0; 
+            background-color: #f0f5f9; color: #111; margin: 0; padding: 0; 
             height: 100%; width: 100%; overflow: hidden;
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Noto Sans KR', sans-serif;
         }
         #root { height: 100%; width: 100%; }
         
-        .twitter-video { 
-            margin: 0 auto !important; 
-            display: block !important;
-            width: 100% !important; 
-            max-width: 550px !important; 
-        }
-        
-        .twitter-video iframe {
-            margin: 0 auto !important;
-            display: block !important;
-            border-radius: 12px !important; 
-            border: none !important;
-            max-height: 100% !important;
-        }
-
-        .video-wrapper { 
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: visible; 
-            text-align: center;
-        }
-        
         .scroller-view { 
             height: 100%; width: 100%; overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
             display: flex; flex-direction: column; 
+            background-color: #f0f5f9;
         }
         
         .game-overlay-fixed { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             display: flex; flex-direction: column; overflow: hidden; z-index: 100; 
-            background: white;
+            background: #f0f5f9;
         }
 
         ::-webkit-scrollbar { width: 0; background: transparent; }
-        .progress-bar-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .fade-in-ani { animation: fade-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .shadow-premium { box-shadow: 0 20px 60px rgba(0,0,0,0.06); width: 100%; }
+        .modal-bg-ani { animation: fade-in-modal 0.3s ease-out forwards; }
+        @keyframes fade-in-modal { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 🔥 좌우 배치 고정 및 레이아웃 파괴 방지 구조 */
+        .vs-container {
+            flex: 1; 
+            min-height: 0; 
+            position: relative;
+            display: flex;
+            flex-direction: row; 
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        
+        .vs-item {
+            flex: 1; 
+            min-width: 0; 
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background-color: transparent; 
+        }
+        .vs-item:active { transform: scale(0.98); }
+
+        .vs-item-inner {
+            position: absolute;
+            top: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; 
+        }
+        
+        .vs-item:first-child .vs-item-inner { left: 0; right: 16px; }
+        .vs-item:last-child .vs-item-inner { left: 16px; right: 0; }
+
+        .winner-inner {
+            position: absolute; top: 0; bottom: 0; left: 0; right: 0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        .media-contain {
+            max-width: 100% !important; 
+            max-height: 100% !important; 
+            width: auto !important; 
+            height: auto !important; 
+            object-fit: contain !important; 
+            display: block;
+            border-radius: 16px; 
+            background-color: transparent; 
+        }
+
+        .embed-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+        }
+        
+        .embed-wrapper iframe, 
+        .embed-wrapper twitter-widget,
+        .embed-wrapper video {
+            max-width: 100% !important;
+            max-height: 100% !important; 
+            margin: 0 auto !important;
+            border-radius: 16px !important;
+        }
+
+        .vs-badge-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .vs-badge {
+            background: white;
+            border-radius: 50%;
+            width: 36px; 
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            color: #333;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-white text-black">
+<body>
     <div id="root">
-        <div class="flex flex-col items-center justify-center h-full text-neutral-300 font-bold uppercase text-[10px] tracking-widest animate-pulse">
+        <div class="flex flex-col items-center justify-center h-full text-gray-400 font-bold uppercase text-[12px] tracking-widest animate-pulse">
             System Initializing...
         </div>
     </div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         const COLLECTION_ID = 'twitter-video-wc-pro';
         const MASTER_PASSWORD = '1028hqwc'; 
 
@@ -132,7 +203,8 @@
             const [wcType, setWcType] = useState('video');
             const [rankingWc, setRankingWc] = useState(null);
             const [zoomUrl, setZoomUrl] = useState(null);
-            const [startNotice, setStartNotice] = useState(null);
+            
+            const [roundSelectWc, setRoundSelectWc] = useState(null);
 
             const [visualTitle, setVisualTitle] = useState('');
             const [editingId, setEditingId] = useState(null);
@@ -173,29 +245,53 @@
                 }
             }, [view, matchIndex, champion, selectedWc, currentRoundItems]);
 
-            const handleStartMatch = (wc) => {
+            // 🔥 모든 떡밥 총합 "통합 월드컵" 자동 생성 로직
+            const integratedWorldcup = useMemo(() => {
+                const visible = worldcups.filter(wc => wc.status !== 'hidden');
+                const allEntriesMap = new Map();
+                
+                // 중복 URL은 승수를 합치면서 하나로 통합
+                visible.forEach(wc => {
+                    wc.entries.forEach(entry => {
+                        if (!allEntriesMap.has(entry.url)) {
+                            // 항목에 원래 소속된 월드컵의 type과 id를 기록 (결과 저장 및 렌더링에 사용)
+                            allEntriesMap.set(entry.url, { ...entry, type: wc.type, originalWcId: wc.id });
+                        } else {
+                            const existing = allEntriesMap.get(entry.url);
+                            existing.winCount = (existing.winCount || 0) + (entry.winCount || 0);
+                        }
+                    });
+                });
+
+                return {
+                    id: 'integrated_all',
+                    title: '👑 모든 떡밥 총합 월드컵',
+                    entries: Array.from(allEntriesMap.values()),
+                    type: 'mixed' // 렌더러가 각 아이템의 타입에 맞게 동작하도록 지시
+                };
+            }, [worldcups]);
+
+            const confirmStartMatch = (wc, roundSize) => {
                 if (!wc.entries || wc.entries.length < 2) {
                     showToast("항목이 부족합니다.");
                     return;
                 }
-                const shuffled = [...wc.entries].sort(() => Math.random() - 0.5);
+                const shuffled = [...wc.entries].sort(() => Math.random() - 0.5).slice(0, roundSize);
+                
                 setSelectedWc(wc);
                 setChampion(null);
                 setMatchIndex(0);
                 setWinners([]);
                 initRound(shuffled);
-                setStartNotice(null);
+                setRoundSelectWc(null); 
                 setView('game');
             };
 
             const initRound = (items) => {
                 setCurrentRoundItems(items); setWinners([]); setMatchIndex(0);
                 const count = items.length;
-                if (count > 16) setRoundName("32강");
-                else if (count > 8) setRoundName("16강");
-                else if (count > 4) setRoundName("8강");
-                else if (count > 2) setRoundName("4강");
-                else if (count === 2) setRoundName("결승전");
+                if (count === 2) setRoundName("결승전");
+                else setRoundName(`${count}강`);
             };
 
             const onSelectItem = async (winner) => {
@@ -207,12 +303,32 @@
                     if (nextWinners.length === 1) {
                         setChampion(nextWinners[0]);
                         const { db, doc, updateDoc } = window.fbStore;
-                        const wcRef = doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', selectedWc.id);
-                        const updatedEntries = selectedWc.entries.map(entry => {
-                            if (entry.url === winner.url) return { ...entry, winCount: (entry.winCount || 0) + 1 };
-                            return entry;
-                        });
-                        await updateDoc(wcRef, { entries: updatedEntries });
+                        
+                        try {
+                            // 🔥 통합 월드컵에서 우승한 경우, 원래 속했던 개별 월드컵 문서의 승수를 업데이트
+                            if (selectedWc.id === 'integrated_all') {
+                                const originalId = nextWinners[0].originalWcId;
+                                const targetWc = worldcups.find(w => w.id === originalId);
+                                if (targetWc) {
+                                    const wcRef = doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', originalId);
+                                    const updatedEntries = targetWc.entries.map(entry => {
+                                        if (entry.url === nextWinners[0].url) return { ...entry, winCount: (entry.winCount || 0) + 1 };
+                                        return entry;
+                                    });
+                                    await updateDoc(wcRef, { entries: updatedEntries });
+                                }
+                            } else {
+                                // 일반 개별 월드컵 업데이트
+                                const wcRef = doc(db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', selectedWc.id);
+                                const updatedEntries = selectedWc.entries.map(entry => {
+                                    if (entry.url === winner.url) return { ...entry, winCount: (entry.winCount || 0) + 1 };
+                                    return entry;
+                                });
+                                await updateDoc(wcRef, { entries: updatedEntries });
+                            }
+                        } catch (e) {
+                            console.error("우승 기록 저장 실패", e);
+                        }
                     } else {
                         initRound(nextWinners);
                     }
@@ -252,213 +368,334 @@
                 else { showToast("비번이 틀렸습니다."); setAdminPw(''); }
             };
 
-            const ItemUI = ({ item, type, isResult = false }) => {
-                const containerClass = isResult 
-                    ? "w-full flex flex-col items-center justify-center fade-in-ani px-0.5" 
-                    : "w-full h-full flex flex-col relative px-2";
-                
-                const cardClass = isResult 
-                    ? "w-full bg-white rounded-[2rem] overflow-hidden border border-neutral-100 shadow-premium flex flex-col"
-                    : "w-full h-full bg-neutral-50 rounded-[2rem] overflow-hidden border border-neutral-100 shadow-sm flex flex-col";
-                
-                const Header = () => isResult ? null : (
-                    <div className="w-full py-1.5 px-6 text-center shrink-0 bg-white border-b border-neutral-50 z-20">
-                        <h3 className="text-[12px] font-black truncate text-black tracking-tight">{item.title}</h3>
-                    </div>
-                );
+            const TwitterAutoPlayer = ({ url }) => {
+                const [mp4Url, setMp4Url] = useState(null);
+                const [useFallback, setUseFallback] = useState(false);
 
-                if (type === 'image') return (
-                    <div className={containerClass}>
-                        <div className={cardClass}>
-                            <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-1'}`}>
-                                <div className="w-full h-full flex items-center justify-center px-1">
-                                    <img 
-                                        src={item.url} 
-                                        className="max-w-full max-h-full object-contain cursor-zoom-in" 
-                                        onClick={() => setZoomUrl(item.url)} 
-                                        alt={item.title} 
-                                    />
-                                    {isResult && <div className="absolute bottom-6 right-8 bg-white/80 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm text-[12px]" onClick={() => setZoomUrl(item.url)}>🔍</div>}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
+                useEffect(() => {
+                    let isMounted = true;
+                    const fetchMp4 = async () => {
+                        try {
+                            const match = url.match(/https:\/\/(?:twitter\.com|x\.com)\/([^\/]+)\/status\/(\d+)/);
+                            if (match) {
+                                const username = match[1];
+                                const tweetId = match[2];
+                                const apiUrl = `https://api.vxtwitter.com/${username}/status/${tweetId}`;
+                                
+                                const response = await fetch(apiUrl);
+                                if (!response.ok) throw new Error("API 연동 실패");
+                                
+                                const data = await response.json();
+                                if (data && data.mediaURLs && data.mediaURLs.length > 0 && isMounted) {
+                                    setMp4Url(data.mediaURLs[0]);
+                                    return;
+                                }
+                            }
+                            throw new Error("영상이 없거나 유효하지 않은 트윗");
+                        } catch (err) {
+                            if (isMounted) setUseFallback(true);
+                        }
+                    };
+                    fetchMp4();
+                    return () => { isMounted = false; };
+                }, [url]);
 
-                if (type === 'text') return (
-                    <div className={containerClass}>
-                        <div className={cardClass}>
-                            <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-6' : 'py-2'}`}>
-                                <div className="w-full h-full flex items-center justify-center overflow-y-auto px-1">
-                                    <p className="text-black font-medium text-[13px] text-center leading-[1.8] whitespace-pre-wrap break-keep w-full p-6">
-                                        {item.url}
-                                    </p>
-                                </div>
-                            </div>
+                if (mp4Url) {
+                    return (
+                        <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent rounded-[16px] overflow-hidden">
+                            <video 
+                                src={mp4Url} 
+                                className="media-contain w-full h-full object-contain" 
+                                autoPlay loop muted playsInline 
+                            />
                         </div>
-                    </div>
-                );
+                    );
+                }
+
+                if (useFallback) {
+                    return (
+                        <div className="embed-wrapper">
+                            <blockquote 
+                                key={url + matchIndex} 
+                                className="twitter-video m-0" 
+                                data-theme="light"
+                                data-align="center"
+                                data-lang="ko"
+                                data-dnt="true"
+                            >
+                                <a href={url.replace('x.com', 'twitter.com')}></a>
+                            </blockquote>
+                        </div>
+                    );
+                }
 
                 return (
-                    <div className={containerClass}>
-                        <div className={cardClass}>
-                            <Header />
-                            <div className={`flex-1 min-h-0 flex items-center justify-center ${isResult ? 'py-4' : 'py-0.5'}`}>
-                                <div className="video-wrapper px-1 w-full flex items-center justify-center">
-                                    <div className="w-full max-w-full flex items-center justify-center">
-                                        <blockquote 
-                                            key={item.id + matchIndex} 
-                                            className="twitter-video" 
-                                            data-media-max-width="560"
-                                            data-theme="light"
-                                            data-align="center"
-                                            data-lang="ko"
-                                            data-dnt="true"
-                                        >
-                                            <a href={item.url.replace('x.com', 'twitter.com')}></a>
-                                        </blockquote>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="w-full h-full flex items-center justify-center bg-[#e2e8f0] rounded-[16px] animate-pulse">
+                        <div className="text-gray-500 text-[10px] font-bold">로딩중...</div>
                     </div>
                 );
             };
 
-            if (!isReady) return <div className="h-full flex items-center justify-center text-neutral-300 font-bold uppercase text-[10px] tracking-widest animate-pulse">Connecting System...</div>;
+            const MediaContent = ({ item, type }) => {
+                if (!item) return null;
+
+                // 🔥 통합 월드컵(mixed)인 경우 개별 아이템에 저장된 원래 타입을 우선 적용
+                const effectiveType = item.type || type;
+
+                if (effectiveType === 'image') return (
+                    <img 
+                        src={item.url} 
+                        className="media-contain cursor-zoom-in" 
+                        alt={item.title} 
+                        onClick={(e) => { e.stopPropagation(); setZoomUrl(item.url); }}
+                    />
+                );
+
+                if (effectiveType === 'text') return (
+                    <div className="w-full h-full max-h-full flex items-center justify-center bg-white p-6 overflow-y-auto rounded-[16px] shadow-sm">
+                        <p className="text-black font-medium text-[14px] text-center leading-[1.8] whitespace-pre-wrap break-keep w-full">
+                            {item.url}
+                        </p>
+                    </div>
+                );
+
+                const url = item.url.trim();
+                const isHTML = url.startsWith('<');
+                const isMp4 = url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('.webm');
+                const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+
+                if (isHTML) {
+                    return <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent" dangerouslySetInnerHTML={{ __html: url }} />;
+                }
+
+                if (isMp4) {
+                    return (
+                        <div className="embed-wrapper w-full h-full flex items-center justify-center bg-transparent rounded-[16px] overflow-hidden">
+                            <video 
+                                src={url} 
+                                className="media-contain w-full h-full object-contain" 
+                                autoPlay loop muted playsInline 
+                            />
+                        </div>
+                    );
+                }
+
+                if (isYoutube) {
+                    let videoId = '';
+                    if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                    else if (url.includes('v=')) videoId = url.split('v=')[1]?.split('&')[0];
+                    
+                    return (
+                        <div className="embed-wrapper w-full h-full rounded-[16px] bg-transparent overflow-hidden flex items-center justify-center">
+                            <iframe 
+                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`} 
+                                className="w-full h-full border-none max-w-full max-h-full"
+                                allow="autoplay; fullscreen"
+                            />
+                        </div>
+                    );
+                }
+
+                return <TwitterAutoPlayer url={url} />;
+            };
+
+            if (!isReady) return <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase text-[12px] tracking-widest animate-pulse bg-[#f0f5f9]">Connecting System...</div>;
 
             if (view === 'home') {
                 const visible = worldcups.filter(wc => wc.status !== 'hidden');
                 return (
-                    <div className="scroller-view bg-white text-black">
-                        {toast && <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] bg-black text-white px-6 py-3 rounded-full text-[11px] font-bold shadow-2xl animate-bounce">{toast}</div>}
-                        <div className="px-6 py-10 w-full max-w-2xl mx-auto flex flex-col pb-60">
-                            <header className="py-12 text-center flex flex-col items-center shrink-0">
-                                <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-8 border-2 border-neutral-100 shadow-2xl overflow-hidden">
-                                    <img src="https://pbs.twimg.com/media/G_gkEzbbMAAW4AX?format=jpg&name=large" className="w-full h-full object-cover" />
-                                </div>
-                                <h1 className="text-2xl font-black tracking-tighter italic mb-1 uppercase">HQ WORLDCUP</h1>
-                                <p className="text-neutral-400 text-[9px] font-bold tracking-[0.3em] uppercase opacity-40">SELECT YOUR GAME</p>
+                    <div className="scroller-view">
+                        {toast && <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] bg-gray-800 text-white px-6 py-3 rounded-full text-[13px] font-bold shadow-lg animate-bounce">{toast}</div>}
+                        
+                        <div className="px-5 py-6 w-full max-w-2xl mx-auto flex flex-col pb-40">
+                            <header className="py-8 text-center flex flex-col items-center shrink-0">
+                                <div className="text-[42px] mb-2 leading-none">🏆</div>
+                                <h1 className="text-[24px] font-black tracking-tight text-gray-900">HQ WORLDCUP</h1>
                             </header>
-                            <div className="space-y-2">
-                                {dataLoading ? <div className="text-center py-20 text-neutral-300 font-bold text-[10px] animate-pulse uppercase tracking-widest">LOADING...</div> :
-                                 visible.map(wc => (
-                                    <div key={wc.id} className="flex gap-2 items-center">
-                                        <button onClick={() => { if(wc.type==='image') setStartNotice(wc); else handleStartMatch(wc); }} className="flex-1 h-14 bg-white px-6 rounded-2xl border border-neutral-100 shadow-sm flex items-center justify-between active:bg-neutral-50 overflow-hidden text-left">
-                                            <div className="truncate mr-4 flex items-center gap-3">
-                                                <span className="text-lg opacity-40 shrink-0">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
-                                                <div className="truncate text-black">
-                                                    <h2 className="text-sm font-bold truncate leading-tight">{wc.title}</h2>
-                                                    <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-tighter mt-0.5">{wc.entries.length} ITEMS</p>
+
+                            <div className="space-y-3">
+                                {dataLoading ? (
+                                    <div className="text-center py-20 text-gray-400 font-bold text-[12px] animate-pulse uppercase tracking-widest">LOADING...</div>
+                                ) : (
+                                    <>
+                                        {/* 🔥 총합 통합 월드컵 (항목이 2개 이상일 때만 표시) */}
+                                        {integratedWorldcup.entries.length >= 2 && (
+                                            <div onClick={() => setRoundSelectWc(integratedWorldcup)} className="bg-gradient-to-r from-[#fff9c4] to-[#fff176] rounded-[18px] p-5 flex items-center justify-between shadow-[0_4px_16px_rgba(255,200,0,0.2)] cursor-pointer active:scale-[0.98] transition-transform mb-2 border border-[#ffee58]">
+                                                <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                                                    <div className="text-[26px] shrink-0 flex items-center justify-center w-12 h-12 bg-white/60 rounded-full shadow-sm">
+                                                        👑
+                                                    </div>
+                                                    <div className="flex flex-col text-left truncate">
+                                                        <h2 className="text-[16px] font-black text-yellow-900 mb-0.5 truncate">{integratedWorldcup.title}</h2>
+                                                        <p className="text-[12px] text-yellow-800 font-bold truncate opacity-80">총 {integratedWorldcup.entries.length}개의 떡밥 · 자동 업데이트</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); setRankingWc(integratedWorldcup); }} className="w-10 h-10 bg-white/60 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                                                        <span className="text-[15px]">🏆</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <span className="text-sm">▶️</span>
-                                        </button>
-                                        <button onClick={() => setRankingWc(wc)} className="w-14 h-14 bg-neutral-50 border border-neutral-100 rounded-2xl flex flex-col items-center justify-center active:scale-90 shrink-0">
-                                            <span className="text-sm">🏆</span>
-                                            <span className="text-[7px] font-black mt-0.5 opacity-60 uppercase">Records</span>
-                                        </button>
-                                    </div>
-                                ))}
+                                        )}
+
+                                        <div className="w-full h-[1px] bg-gray-200 my-4 opacity-50"></div>
+
+                                        {/* 기존 개별 월드컵 리스트 */}
+                                        {visible.map(wc => (
+                                            <div key={wc.id} className="bg-white rounded-[18px] p-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.98] transition-transform">
+                                                <div className="flex items-center gap-4 flex-1 overflow-hidden" onClick={() => setRoundSelectWc(wc)}>
+                                                    <div className="text-2xl shrink-0 flex items-center justify-center w-10 h-10 bg-[#f0f5f9] rounded-full">
+                                                        {wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}
+                                                    </div>
+                                                    <div className="flex flex-col text-left truncate">
+                                                        <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 truncate">{wc.title}</h2>
+                                                        <p className="text-[12px] text-gray-400 truncate">총 {wc.entries.length}개의 항목 · {wc.type === 'video' ? '비디오' : wc.type === 'image' ? '이미지' : '텍스트'} 월드컵</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); setRankingWc(wc); }} className="w-9 h-9 bg-[#f0f5f9] rounded-full flex items-center justify-center active:bg-gray-200 transition-colors">
+                                                        <span className="text-[14px]">🏆</span>
+                                                    </button>
+                                                    <div className="w-8 flex items-center justify-center text-[#4a90e2]" onClick={() => setRoundSelectWc(wc)}>
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
                             </div>
                         </div>
+
+                        {/* 🔥 강수(라운드) 선택 모달 */}
+                        {roundSelectWc && (
+                            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 modal-bg-ani" onClick={() => setRoundSelectWc(null)}>
+                                <div className="bg-white w-full max-w-xs rounded-[24px] p-6 text-center shadow-2xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                                    <div className="text-4xl mb-3 mt-2">{roundSelectWc.id === 'integrated_all' ? '👑' : '🏆'}</div>
+                                    <h3 className="font-black text-[18px] mb-1 text-gray-900 truncate px-2">{roundSelectWc.title}</h3>
+                                    <p className="text-gray-400 text-[13px] mb-5">총 {roundSelectWc.entries.length}개의 항목</p>
+
+                                    <div className="text-left mb-3 pl-1">
+                                        <span className="font-bold text-gray-800 text-[14px]">라운드 선택</span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pb-2 scrollbar-hide">
+                                        {(() => {
+                                            const total = roundSelectWc.entries.length;
+                                            let rounds = [4, 8, 16, 32, 64, 128, 256].filter(r => r <= total);
+                                            if (total < 4) rounds = [total]; 
+                                            if (total > 4 && !rounds.includes(total)) rounds.push(total); 
+                                            const uniqueRounds = [...new Set(rounds)].sort((a,b)=>a-b);
+                                            
+                                            return uniqueRounds.map(r => (
+                                                <button 
+                                                    key={r} 
+                                                    onClick={() => confirmStartMatch(roundSelectWc, r)} 
+                                                    className="bg-[#f0f5f9] hover:bg-[#e4ebf1] text-gray-800 font-bold py-3.5 rounded-[14px] transition-colors active:scale-95 border-none text-[15px] shadow-sm flex flex-col items-center justify-center gap-0.5"
+                                                >
+                                                    <span>{r}강</span>
+                                                    {![4, 8, 16, 32, 64, 128, 256].includes(r) && <span className="text-[10px] text-gray-400 font-medium">전체 항목</span>}
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                    <button onClick={() => setRoundSelectWc(null)} className="w-full mt-4 py-3 text-gray-400 font-bold text-[14px] active:scale-95 transition-transform bg-transparent border-none">닫기</button>
+                                </div>
+                            </div>
+                        )}
+
                         {rankingWc && (
-                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm" onClick={() => setRankingWc(null)}>
-                                <div className="bg-white w-full max-w-md max-h-[70vh] rounded-[2.5rem] p-8 flex flex-col shadow-2xl modal-bg-ani text-black" onClick={e => e.stopPropagation()}>
+                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm" onClick={() => setRankingWc(null)}>
+                                <div className="bg-white w-full max-w-md max-h-[75vh] rounded-[24px] p-6 flex flex-col shadow-2xl modal-bg-ani" onClick={e => e.stopPropagation()}>
                                     <header className="flex justify-between items-center mb-6 shrink-0">
-                                        <h3 className="font-black text-lg uppercase">🏅 Win Ranking</h3>
-                                        <button onClick={() => setRankingWc(null)} className="p-2 opacity-30 text-xl font-bold">✕</button>
+                                        <h3 className="font-black text-lg text-gray-900 truncate pr-4">🏅 {rankingWc.title}</h3>
+                                        <button onClick={() => setRankingWc(null)} className="p-2 opacity-40 text-xl font-bold shrink-0">✕</button>
                                     </header>
-                                    <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                                         {[...rankingWc.entries].sort((a, b) => (b.winCount || 0) - (a.winCount || 0)).map((entry, idx) => (
-                                            <div key={idx} className="p-3 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100">
+                                            <div key={idx} className="p-3.5 bg-[#f0f5f9] rounded-[14px] flex items-center justify-between border border-transparent">
                                                 <div className="flex items-center gap-3 truncate text-left">
-                                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] ${idx === 0 ? 'bg-yellow-400 text-white' : 'bg-neutral-200'}`}>{idx + 1}</span>
-                                                    <p className="font-medium text-xs truncate">{entry.title}</p>
+                                                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 ${idx === 0 ? 'bg-[#ffca28] text-white shadow-md' : idx === 1 ? 'bg-gray-300 text-white' : idx === 2 ? 'bg-[#d7ccc8] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                                        {idx + 1}
+                                                    </span>
+                                                    <p className="font-bold text-[13px] text-gray-800 truncate">{entry.title}</p>
                                                 </div>
-                                                <div className="flex items-center gap-1 ml-4 shrink-0"><span className="font-bold text-blue-600 text-xs">{entry.winCount || 0}</span><span className="text-[8px] font-bold opacity-30 uppercase ml-1 font-bold">Wins</span></div>
+                                                <div className="flex items-center gap-1 ml-4 shrink-0">
+                                                    <span className="font-bold text-[#4a90e2] text-[14px]">{entry.winCount || 0}</span>
+                                                    <span className="text-[10px] text-gray-400 font-bold ml-0.5">승</span>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
                         )}
-                        {startNotice && (
-                            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-8 modal-bg-ani" onClick={() => setStartNotice(null)}>
-                                <div className="bg-white w-full max-w-xs rounded-[2.5rem] p-8 text-center shadow-2xl text-black" onClick={e => e.stopPropagation()}>
-                                    <div className="text-3xl mb-6 text-center">ℹ️</div>
-                                    <h3 className="font-black text-lg mb-2 text-center uppercase">Image Game</h3>
-                                    <p className="text-neutral-400 text-xs font-bold leading-relaxed mb-8 text-center">이미지를 클릭하면 원본을 크게 볼 수 있습니다.</p>
-                                    <button onClick={() => handleStartMatch(startNotice)} className="w-full h-14 bg-black rounded-2xl text-white font-black uppercase text-sm active:scale-95 shadow-lg border-none">시작하기</button>
-                                </div>
-                            </div>
-                        )}
-                        <button onClick={() => setView('admin_auth')} className="fixed bottom-10 right-6 px-5 h-12 bg-black rounded-full flex items-center justify-center shadow-2xl active:scale-95 z-[60] border-none text-white font-bold text-xs uppercase tracking-tighter">⚙️ 관리자</button>
+                        
+                        <button onClick={() => setView('admin_auth')} className="fixed bottom-6 right-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.1)] active:scale-95 z-[60] border-none text-gray-600">⚙️</button>
                     </div>
                 );
             }
 
             if (view === 'admin_auth') return (
-                <div className="scroller-view bg-white items-center justify-center p-8 text-center text-black">
-                    <span className="text-4xl mb-6 opacity-20">🔐</span>
-                    <h2 className="text-xl font-black mb-8 uppercase tracking-[0.2em]">ADMIN</h2>
-                    <input type="password" value={adminPw} onChange={e => setAdminPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && onAdminLogin()} className="w-full max-w-xs border-b-2 border-neutral-100 py-4 text-center text-3xl tracking-[0.5em] outline-none focus:border-black transition-all bg-transparent font-mono" placeholder="****" autoFocus />
-                    <button onClick={onAdminLogin} className="w-full max-w-xs bg-black py-4 rounded-xl active:scale-95 mt-8 text-white font-bold uppercase shadow-xl border-none">LOGIN</button>
-                    <button onClick={() => setView('home')} className="mt-8 font-bold underline opacity-20 text-xs uppercase text-center">Back</button>
+                <div className="scroller-view items-center justify-center p-8 text-center">
+                    <span className="text-4xl mb-6 opacity-40">🔐</span>
+                    <h2 className="text-xl font-black mb-8 tracking-widest text-gray-800">ADMIN</h2>
+                    <input type="password" value={adminPw} onChange={e => setAdminPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && onAdminLogin()} className="w-full max-w-xs border-b-2 border-gray-300 py-4 text-center text-3xl tracking-[0.5em] outline-none focus:border-[#4a90e2] transition-colors bg-transparent font-mono" placeholder="****" autoFocus />
+                    <button onClick={onAdminLogin} className="w-full max-w-xs bg-[#4a90e2] py-4 rounded-xl active:scale-95 mt-8 text-white font-bold uppercase shadow-md border-none">LOGIN</button>
+                    <button onClick={() => setView('home')} className="mt-8 font-bold underline text-gray-400 text-xs uppercase">Back to Home</button>
                 </div>
             );
 
             if (view === 'admin') return (
-                <div className="scroller-view bg-white text-black">
-                    <div className="px-6 py-10 w-full max-w-4xl mx-auto pb-[400px]">
-                        <header className="flex justify-between items-center mb-10 shrink-0 text-black">
-                            <button onClick={() => { setView('home'); setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="text-xl">⬅️</button>
-                            <h1 className="font-black text-neutral-400 text-[10px] uppercase tracking-widest italic text-center">DASHBOARD</h1>
+                <div className="scroller-view text-gray-900">
+                    <div className="px-5 py-8 w-full max-w-4xl mx-auto pb-40">
+                        <header className="flex justify-between items-center mb-8 shrink-0">
+                            <button onClick={() => { setView('home'); setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="text-2xl p-2 bg-white rounded-full shadow-sm text-gray-600">⬅️</button>
+                            <h1 className="font-black text-gray-500 text-[12px] uppercase tracking-widest">DASHBOARD</h1>
                             <div className="w-10"></div>
                         </header>
-                        <div className="space-y-8">
-                            <div className="bg-neutral-50 rounded-[2.5rem] p-8 border border-neutral-100 shadow-sm space-y-6 text-black">
-                                <h2 className="font-black text-lg">{editingId ? '✏️ 수정 모드' : '🚀 신규 발행'}</h2>
+                        
+                        <div className="space-y-6">
+                            <div className="bg-white rounded-[24px] p-6 shadow-sm space-y-5">
+                                <h2 className="font-black text-[18px]">{editingId ? '✏️ 월드컵 수정' : '🚀 신규 월드컵 발행'}</h2>
                                 <div className="flex gap-2">
                                     {['video', 'image', 'text'].map(type => (
-                                        <button key={type} onClick={() => setWcType(type)} className={`flex-1 py-4 rounded-2xl font-bold text-xs border-2 transition-all ${wcType === type ? 'border-black bg-black text-white' : 'border-neutral-100 text-neutral-400 bg-white'}`}>
+                                        <button key={type} onClick={() => setWcType(type)} className={`flex-1 py-3.5 rounded-xl font-bold text-[13px] border-2 transition-colors ${wcType === type ? 'border-[#4a90e2] bg-[#4a90e2] text-white' : 'border-[#f0f5f9] bg-[#f0f5f9] text-gray-500'}`}>
                                             {type === 'video' ? '📹 영상' : type === 'image' ? '🖼️ 이미지' : '💬 대사'}
                                         </button>
                                     ))}
                                 </div>
-                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-white p-5 rounded-2xl font-bold border border-neutral-100 outline-none focus:border-black shadow-inner" placeholder="월드컵 제목" />
+                                <input value={visualTitle} onChange={e => setVisualTitle(e.target.value)} className="w-full bg-[#f0f5f9] p-4 rounded-xl font-bold border-none outline-none focus:ring-2 focus:ring-[#4a90e2]/50 text-[15px]" placeholder="월드컵 제목 입력" />
                                 
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase opacity-40 italic font-bold ml-1">Entries Data (제목 + 엔터 + 링크)</p>
+                                    <p className="text-[11px] font-bold text-gray-400 ml-1">입력 지원: 트위터 링크, 유튜브, .mp4 링크, iframe 태그</p>
                                     <textarea 
                                         value={bulkText} 
                                         onChange={e => setBulkText(e.target.value)} 
-                                        className="w-full h-[320px] bg-white border border-neutral-100 rounded-2xl p-6 font-mono text-[11px] outline-none leading-relaxed shadow-inner text-black font-bold" 
-                                        placeholder={`항목 사이 빈 줄 두 번(엔터 2번)으로 구분하세요.\n\n예시:\n제목1\nhttps://트위터이미지링크1\n\n제목2\nhttps://트위터이미지링크2`} 
+                                        className="w-full h-[280px] bg-[#f0f5f9] border-none rounded-xl p-5 font-mono text-[12px] outline-none leading-relaxed focus:ring-2 focus:ring-[#4a90e2]/50" 
+                                        placeholder={`[예시]\n\n제목1\nhttps://x.com/... (앱이 알아서 영상 추출! ✨)\n\n제목2\nhttps://youtu.be/...\n\n제목3\nhttps://...mp4`} 
                                     />
                                 </div>
 
-                                <div className="flex gap-2">
-                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="flex-1 bg-neutral-200 py-5 rounded-2xl font-black text-xs uppercase text-black border-none">취소</button>}
-                                    <button onClick={onSaveWorldcup} className="flex-[2] bg-blue-600 py-5 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 border-none">
-                                        {editingId ? '저장 완료' : '월드컵 발행'}
+                                <div className="flex gap-2 pt-2">
+                                    {editingId && <button onClick={() => { setEditingId(null); setVisualTitle(''); setBulkText(''); }} className="flex-1 bg-gray-200 py-4 rounded-xl font-bold text-[14px] text-gray-700 border-none">취소</button>}
+                                    <button onClick={onSaveWorldcup} className="flex-[2] bg-[#4a90e2] py-4 rounded-xl text-white font-bold text-[15px] shadow-md active:scale-95 border-none transition-transform">
+                                        {editingId ? '수정 내용 저장' : '새 월드컵 발행'}
                                     </button>
                                 </div>
                             </div>
-                            <div className="pt-10 border-t border-neutral-100 space-y-4">
+                            
+                            <div className="pt-6 space-y-3">
                                 {worldcups.map(wc => (
-                                    <div key={wc.id} className={`p-4 bg-white border border-neutral-100 rounded-2xl flex items-center justify-between shadow-sm transition-opacity ${wc.status === 'hidden' ? 'opacity-40 grayscale' : 'opacity-100'}`}>
-                                        <div className="flex items-center gap-2 truncate text-left text-black">
-                                            <span className="text-sm shrink-0">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
-                                            <span className="text-xs font-black truncate">{wc.title}</span>
+                                    <div key={wc.id} className={`p-4 bg-white rounded-[16px] flex items-center justify-between shadow-sm transition-opacity ${wc.status === 'hidden' ? 'opacity-50' : 'opacity-100'}`}>
+                                        <div className="flex items-center gap-3 truncate text-left pr-2">
+                                            <span className="text-[18px] shrink-0 bg-[#f0f5f9] w-8 h-8 rounded-full flex items-center justify-center">{wc.type === 'video' ? '📹' : wc.type === 'image' ? '🖼️' : '💬'}</span>
+                                            <span className="text-[14px] font-bold truncate text-gray-800">{wc.title}</span>
                                         </div>
-                                        <div className="flex gap-1.5 shrink-0 ml-4">
-                                            <button onClick={() => handleStartMatch(wc)} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none active:bg-neutral-100">▶️</button>
-                                            <button onClick={async () => { const next = wc.status === 'hidden' ? 'published' : 'hidden'; await window.fbStore.updateDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id), {status: next}); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm border-none">{wc.status === 'hidden' ? '🙈' : '👁️'}</button>
-                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setWcType(wc.type || 'video'); setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm font-bold border-none text-black">✏️</button>
-                                            <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { await window.fbStore.deleteDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id)); } }} className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center text-sm text-red-500 border-none">🗑️</button>
+                                        <div className="flex gap-1.5 shrink-0">
+                                            <button onClick={async () => { const next = wc.status === 'hidden' ? 'published' : 'hidden'; await window.fbStore.updateDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id), {status: next}); }} className="w-9 h-9 bg-[#f0f5f9] rounded-lg flex items-center justify-center text-[14px] border-none text-gray-600">{wc.status === 'hidden' ? '🙈' : '👁️'}</button>
+                                            <button onClick={() => { setEditingId(wc.id); setVisualTitle(wc.title); setWcType(wc.type || 'video'); setBulkText(wc.entries.map(e => `${e.title}\n${e.url}`).join('\n\n')); document.querySelector('.scroller-view').scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-9 h-9 bg-[#f0f5f9] rounded-lg flex items-center justify-center text-[14px] border-none text-gray-600">✏️</button>
+                                            <button onClick={async () => { if(confirm("삭제하시겠습니까?")) { await window.fbStore.deleteDoc(window.fbStore.doc(window.fbStore.db, 'artifacts', COLLECTION_ID, 'public', 'data', 'worldcups', wc.id)); } }} className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center text-[14px] text-red-500 border-none">🗑️</button>
                                         </div>
                                     </div>
                                 ))}
@@ -470,64 +707,81 @@
 
             if (view === 'game') {
                 const totalM = Math.floor(currentRoundItems.length / 2);
-                const progress = ((matchIndex + 1) / totalM) * 100;
+                
                 return (
-                    <div className="game-overlay-fixed bg-white">
+                    <div className="game-overlay-fixed px-4 pb-4">
                         {zoomUrl && (
-                            <div className="fixed inset-0 z-[1000] bg-black/95 flex flex-col items-center justify-center p-4 modal-bg-ani" onClick={() => setZoomUrl(null)}>
-                                <div className="absolute top-12 right-6 z-[1001] w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg text-white font-bold font-black">✕</div>
-                                <img src={zoomUrl} className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-lg" alt="Full" />
-                                <p className="mt-8 text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase text-center font-bold">TAP TO CLOSE</p>
+                            <div className="fixed inset-0 z-[1000] bg-black flex flex-col items-center justify-center p-2 modal-bg-ani" onClick={() => setZoomUrl(null)}>
+                                <div className="absolute top-10 right-6 z-[1001] w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold cursor-pointer">✕</div>
+                                <img src={zoomUrl} className="max-w-full max-h-[90vh] object-contain" alt="Full" />
                             </div>
                         )}
-                        {!champion && <div className="w-full h-0.5 bg-neutral-100 shrink-0"><div className="h-full bg-black progress-bar-fill" style={{ width: `${progress}%` }} /></div>}
                         
+                        <header className="relative flex flex-col items-center justify-center h-16 shrink-0 bg-transparent">
+                            <button onClick={() => setView('home')} className="absolute left-0 top-1/2 -translate-y-1/2 p-2 bg-transparent border-none">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <h1 className="text-[16px] font-bold text-gray-900">{selectedWc?.title}</h1>
+                            {!champion && (
+                                <p className="text-[12px] text-gray-400 mt-0.5">{roundName} ({matchIndex + 1}/{totalM})</p>
+                            )}
+                        </header>
+
                         {champion ? (
-                            <div className="flex-1 flex flex-col items-center p-4 text-center fade-in-ani overflow-hidden text-black">
-                                <div className="mt-[5vh] mb-10 flex flex-col items-center shrink-0 w-full text-black">
-                                    <div className="text-4xl mb-3 text-center">🏆</div>
-                                    <h2 className="text-base font-black px-6 truncate max-w-sm tracking-tight">{champion.title}</h2>
-                                    <div className="flex items-center justify-center bg-yellow-400 h-6 px-3 rounded-full shadow-sm mt-4 border-none font-bold uppercase overflow-hidden">
-                                        <span className="text-[10px] leading-none">🏆 TOTAL WINS: {champion.winCount || 0}</span>
+                            <div className="flex-1 flex flex-col items-center text-center fade-in-ani overflow-hidden bg-transparent pt-4">
+                                <div className="mb-6 flex flex-col items-center shrink-0 w-full">
+                                    <div className="text-[40px] mb-2 drop-shadow-md">🏆</div>
+                                    <h2 className="text-[20px] font-black px-4 truncate max-w-sm text-gray-900 break-keep">{champion.title}</h2>
+                                    <div className="mt-3 px-4 py-1.5 bg-[#ffca28] rounded-full text-white font-bold text-[12px] shadow-sm">
+                                        우승 {champion.winCount || 0}회
                                     </div>
                                 </div>
-                                <div className="w-full flex-1 flex items-center justify-center min-h-0 mb-8 overflow-hidden text-black px-0.5">
-                                    <ItemUI item={champion} type={selectedWc.type} isResult={true} />
+                                
+                                <div className="flex-1 w-full max-w-md relative mb-8">
+                                    <div className="winner-inner bg-transparent rounded-[16px]">
+                                        <MediaContent item={champion} type={selectedWc.type} />
+                                    </div>
                                 </div>
-                                <div className="w-full flex justify-center shrink-0 px-8 pb-12">
-                                    <button onClick={() => {setView('home'); setChampion(null); setRankingWc(null);}} className="w-full max-w-[280px] h-14 bg-black rounded-2xl shadow-xl flex items-center justify-center border-none font-black text-white text-sm tracking-[0.3em] text-center uppercase">HOME</button>
+                                
+                                <div className="w-full flex justify-center shrink-0 max-w-md pb-6">
+                                    <button onClick={() => {setView('home'); setChampion(null); setRankingWc(null);}} className="w-full h-14 bg-[#4a90e2] rounded-[16px] shadow-md flex items-center justify-center border-none font-bold text-white text-[16px] active:scale-95 transition-transform">
+                                        홈으로 돌아가기
+                                    </button>
                                 </div>
                             </div>
                         ) : (
                             <>
-                                <header className="h-12 shrink-0 flex items-center justify-between px-6 border-b border-neutral-100 bg-white text-black">
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-tighter">{roundName}</span>
-                                        <h1 className="text-xs font-bold truncate max-w-[140px] mt-0.5 text-black font-black">{selectedWc?.title}</h1>
+                                <div className="vs-container">
+                                    <div className="vs-item" onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])}>
+                                        <div className="vs-item-inner">
+                                            <MediaContent item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-2 py-0.5 bg-black rounded-full text-white text-[9px] font-black flex items-center h-4">{matchIndex + 1} / {totalM}</div>
-                                        <button onClick={() => setView('home')} className="p-1 opacity-20 text-lg text-black font-bold border-none bg-transparent">✕</button>
+                                    
+                                    <div className="vs-badge-wrapper">
+                                        <div className="vs-badge">VS</div>
                                     </div>
-                                </header>
-                                <main className="flex-1 flex flex-col min-h-0 py-0 bg-white relative text-black overflow-hidden">
-                                    <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
-                                        <ItemUI item={currentRoundItems[matchIndex * 2]} type={selectedWc.type} />
+                                    
+                                    <div className="vs-item" onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])}>
+                                        <div className="vs-item-inner">
+                                            {currentRoundItems[matchIndex * 2 + 1] ? (
+                                                <MediaContent item={currentRoundItems[matchIndex * 2 + 1]} type={selectedWc.type} />
+                                            ) : (
+                                                <div className="text-gray-400 text-[13px] opacity-60 font-medium bg-transparent w-full h-full flex items-center justify-center rounded-[16px]">부전승</div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="h-6 flex items-center justify-center relative shrink-0">
-                                        <div className="absolute w-full h-[1px] bg-neutral-100"></div>
-                                        <div className="relative z-10 px-3 bg-white text-[9px] font-black italic uppercase">VS</div>
-                                    </div>
-                                    <div className="flex-1 min-h-0 relative flex flex-col px-0.5">
-                                        {currentRoundItems[matchIndex * 2 + 1] 
-                                            ? <ItemUI item={currentRoundItems[matchIndex * 2 + 1]} type={selectedWc.type} /> 
-                                            : <div className="flex-1 flex items-center justify-center text-[10px] opacity-20 font-bold italic text-black uppercase text-center font-black">Auto Win</div>
-                                        }
-                                    </div>
-                                </main>
-                                <footer className="shrink-0 grid grid-cols-2 gap-4 px-6 py-5 mb-3 bg-white border-t border-neutral-50 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] z-[50]">
-                                    <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="h-16 bg-[#FF4646] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl border-none">UP</button>
-                                    <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="h-16 bg-[#4673FF] rounded-2xl flex items-center justify-center active:opacity-80 shadow-md font-black text-white text-xl disabled:opacity-10 border-none">DOWN</button>
+                                </div>
+
+                                <footer className="shrink-0 grid grid-cols-2 gap-3 pb-6">
+                                    <button onClick={() => onSelectItem(currentRoundItems[matchIndex * 2])} className="w-full bg-white rounded-xl p-3.5 flex flex-col items-center justify-center shadow-sm active:scale-[0.98] transition-all border-2 border-transparent hover:border-[#ff4b4b]/30 h-full">
+                                        <span className="text-[#ff4b4b] text-[18px] mb-1">◀</span>
+                                        <span className="font-bold text-[13px] line-clamp-2 text-center break-keep text-gray-800">{currentRoundItems[matchIndex * 2]?.title}</span>
+                                    </button>
+                                    <button onClick={() => currentRoundItems[matchIndex * 2 + 1] && onSelectItem(currentRoundItems[matchIndex * 2 + 1])} disabled={!currentRoundItems[matchIndex * 2 + 1]} className="w-full bg-white rounded-xl p-3.5 flex flex-col items-center justify-center shadow-sm active:scale-[0.98] transition-all border-2 border-transparent hover:border-[#4a90e2]/30 disabled:opacity-40 h-full">
+                                        <span className="text-[#4a90e2] text-[18px] mb-1">▶</span>
+                                        <span className="font-bold text-[13px] line-clamp-2 text-center break-keep text-gray-800">{currentRoundItems[matchIndex * 2 + 1]?.title || '부전승'}</span>
+                                    </button>
                                 </footer>
                             </>
                         )}
@@ -541,4 +795,5 @@
     </script>
 </body>
 </html>
+
 
