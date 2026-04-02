@@ -403,12 +403,13 @@
             const listHtml = sortedItems.map((item, idx) => {
                 const count = item.winCount || 0;
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+                const dateText = item.date ? `<p class="text-[9px] text-gray-400">${item.date}</p>` : '';
                 return `
                 <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-[14px] border border-gray-100/50">
                     <div class="w-6 font-black text-center text-gray-400 text-[12px]">${medal}</div>
                     <button onclick="window.showItemPreview('${cupId}', ${item.id})" class="flex-grow text-left min-w-0">
                         <p class="font-bold text-gray-800 text-[12px] truncate">${item.name}</p>
-                        <p class="text-[9px] text-gray-400">${item.date || (cupId === 'all' && item.originalCupId ? '통합데이터' : '')}</p>
+                        ${dateText}
                     </button>
                     <div class="text-blue-500 font-black text-[12px] pr-2">${count}<span class="text-[9px] ml-0.5 font-bold">승</span></div>
                 </div>`;
