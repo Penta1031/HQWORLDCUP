@@ -25,12 +25,12 @@
             background-attachment: fixed;
             -webkit-tap-highlight-color: transparent;
         }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .card-shadow { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); }
         .select-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .selected-item { transform: scale(1.02); border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); z-index: 20;}
-        .unselected-item { transform: scale(0.95); opacity: 0.4; filter: grayscale(50%); pointer-events: none; }
+        .unselected-item { transform: scale(0.96); opacity: 0.4; filter: grayscale(50%); pointer-events: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="checkbox"] { accent-color: #ef4444; cursor: pointer; }
@@ -38,123 +38,137 @@
 </head>
 <body class="text-gray-800 font-sans min-h-screen flex flex-col antialiased relative">
 
-    <header id="main-header" class="sticky top-0 z-50 bg-white/40 backdrop-blur-md" style="display: none;">
-        <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
-            <button onclick="window.goHome()" class="text-gray-600 hover:text-black p-2 -ml-2">
-                <i class="fa-solid fa-xmark text-xl" id="header-back-btn"></i>
+    <header id="main-header" class="sticky top-0 z-50 bg-white/40 backdrop-blur-md border-b border-gray-100/50" style="display: none;">
+        <div class="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
+            <button onclick="window.goHome()" class="text-gray-500 hover:text-black p-2 -ml-2 transition-colors">
+                <i class="fa-solid fa-chevron-left text-base"></i>
             </button>
             <div class="text-center flex-grow">
-                <h1 class="font-bold text-lg tracking-tight truncate w-full px-2" id="header-title">혚쾌 월드컵</h1>
+                <h1 class="font-bold text-[15px] tracking-tight truncate w-full px-2" id="header-title">혚쾌 월드컵</h1>
             </div>
             <div class="w-8"></div> 
         </div>
     </header>
 
-    <main id="app-content" class="max-w-md mx-auto w-full flex-grow relative pb-10">
+    <main id="app-content" class="max-w-md mx-auto w-full flex-grow relative pb-8">
         <div class="flex flex-col items-center justify-center h-[50vh] text-blue-500">
-            <i class="fa-solid fa-spinner fa-spin text-4xl mb-3"></i>
-            <p class="text-sm font-bold text-gray-500">데이터 불러오는 중...</p>
+            <i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i>
+            <p class="text-xs font-bold text-gray-400">데이터 불러오는 중...</p>
         </div>
     </main>
 
-    <!-- 자체 제작 알림창 (Alert/Confirm) -->
-    <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] p-6 w-full max-w-xs shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-300" id="custom-alert-content">
-            <p id="custom-alert-message" class="text-gray-800 font-bold mb-6 whitespace-pre-wrap leading-relaxed text-[15px]"></p>
-            <button onclick="window.closeCustomAlert()" class="w-full py-3.5 bg-blue-500 hover:bg-blue-600 transition-colors text-white font-bold rounded-xl text-[15px]">확인</button>
+    <!-- 자체 제작 알림창 (Alert) -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black/50 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-alert-content">
+            <p id="custom-alert-message" class="text-gray-800 font-bold mb-5 whitespace-pre-wrap leading-relaxed text-[14px]"></p>
+            <button onclick="window.closeCustomAlert()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 transition-colors text-white font-bold rounded-xl text-[13px]">확인</button>
         </div>
     </div>
 
-    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] p-6 w-full max-w-xs shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-300" id="custom-confirm-content">
-            <p id="custom-confirm-message" class="text-gray-800 font-bold mb-6 whitespace-pre-wrap leading-relaxed text-[15px]"></p>
+    <!-- 자체 제작 확인창 (Confirm) -->
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/50 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-confirm-content">
+            <p id="custom-confirm-message" class="text-gray-800 font-bold mb-5 whitespace-pre-wrap leading-relaxed text-[14px]"></p>
             <div class="flex gap-2">
-                <button onclick="window.closeCustomConfirm(false)" class="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600 font-bold rounded-xl text-[15px]">취소</button>
-                <button onclick="window.closeCustomConfirm(true)" class="flex-1 py-3.5 bg-red-500 hover:bg-red-600 transition-colors text-white font-bold rounded-xl text-[15px]" id="custom-confirm-btn">확인</button>
+                <button onclick="window.closeCustomConfirm(false)" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
+                <button onclick="window.closeCustomConfirm(true)" class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 transition-colors text-white font-bold rounded-xl text-[13px]" id="custom-confirm-btn">확인</button>
             </div>
         </div>
     </div>
 
-    <!-- 각종 모달들 -->
+    <!-- 자체 제작 비밀번호 입력창 (Prompt) -->
+    <div id="custom-prompt-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-prompt-content">
+            <h3 class="text-gray-800 font-bold mb-3 text-[14px]">관리자 비밀번호 입력</h3>
+            <input type="password" id="admin-password-input" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-[13px] text-center mb-4 focus:outline-none focus:border-blue-400 transition-colors" placeholder="비밀번호">
+            <div class="flex gap-2">
+                <button onclick="window.closeCustomPrompt(false)" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
+                <button onclick="window.closeCustomPrompt(true)" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 transition-colors text-white font-bold rounded-xl text-[13px]">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 랭킹 모달 -->
     <div id="ranking-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-end justify-center">
-        <div class="bg-white rounded-t-[32px] w-full max-w-md p-6 shadow-2xl transform translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col" id="ranking-modal-content">
-            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+        <div class="bg-white rounded-t-[24px] w-full max-w-md p-5 shadow-2xl transform translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col" id="ranking-modal-content">
+            <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
             <div class="flex items-center justify-between mb-1">
-                <h3 class="text-xl font-bold text-gray-900" id="ranking-modal-title">우승 랭킹</h3>
-                <button onclick="window.closeRankingModal()" class="text-gray-400 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <h3 class="text-lg font-bold text-gray-900" id="ranking-modal-title">우승 랭킹</h3>
+                <button onclick="window.closeRankingModal()" class="text-gray-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-gray-500 mb-4 font-medium">※ 목록의 제목을 누르면 떡밥 확인이 가능합니다.</p>
-            <div id="ranking-list" class="overflow-y-auto flex-grow hide-scrollbar space-y-3 pb-6"></div>
+            <p class="text-[11px] text-gray-400 mb-4 font-medium">※ 목록의 제목을 누르면 떡밥 확인이 가능합니다.</p>
+            <div id="ranking-list" class="overflow-y-auto flex-grow hide-scrollbar space-y-2 pb-6"></div>
         </div>
     </div>
 
+    <!-- 몇 강 선택 모달 -->
     <div id="bracket-modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="bracket-modal-content">
-            <div class="text-center mb-6">
-                <h3 class="text-xl font-bold text-gray-900 mb-1" id="bracket-modal-title">월드컵 제목</h3>
-                <p class="text-sm text-gray-500">몇 강으로 진행할까요?</p>
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl transform scale-95 opacity-0 transition-all duration-200" id="bracket-modal-content">
+            <div class="text-center mb-5">
+                <h3 class="text-[16px] font-bold text-gray-900 mb-1 truncate" id="bracket-modal-title">월드컵 제목</h3>
+                <p class="text-xs text-gray-400">몇 강으로 진행할까요?</p>
             </div>
-            <div class="grid grid-cols-2 gap-3" id="bracket-options"></div>
-            <button onclick="window.closeBracketModal()" class="mt-6 w-full py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
+            <div class="grid grid-cols-2 gap-2" id="bracket-options"></div>
+            <button onclick="window.closeBracketModal()" class="mt-4 w-full py-2.5 bg-gray-50 text-gray-500 font-bold rounded-xl hover:bg-gray-100 transition-colors text-[13px]">취소</button>
         </div>
     </div>
 
+    <!-- 풀 미디어 모달 -->
     <div id="media-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 fade-in" onclick="window.closeFullMedia()">
         <button class="absolute top-4 right-4 text-white hover:text-gray-300 z-[210] p-2" onclick="window.closeFullMedia()">
-            <i class="fa-solid fa-xmark text-3xl"></i>
+            <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
         <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()"></div>
     </div>
 
     <!-- 관리자용 모달: 항목 추가/수정 -->
     <div id="admin-item-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold text-gray-900 mb-4" id="admin-item-modal-title">항목 추가</h3>
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[300px] shadow-2xl">
+            <h3 class="text-[15px] font-bold text-gray-900 mb-4" id="admin-item-modal-title">항목 추가</h3>
             <input type="hidden" id="admin-item-id">
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">후보 이름</label>
-                    <input type="text" id="admin-item-name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="예: 혚쾌 떡밥">
+                    <label class="block text-[11px] font-bold text-gray-400 mb-1">후보 이름</label>
+                    <input type="text" id="admin-item-name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px] focus:outline-none focus:border-blue-300" placeholder="예: 혚쾌 떡밥">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">날짜/설명 (선택)</label>
-                    <input type="text" id="admin-item-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="예: 2024.03.15">
+                    <label class="block text-[11px] font-bold text-gray-400 mb-1">날짜/설명 (선택)</label>
+                    <input type="text" id="admin-item-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px] focus:outline-none focus:border-blue-300" placeholder="예: 2024.03.15">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">링크/출처 <span class="text-blue-500 font-normal">(텍스트 떡밥이면 비워둠)</span></label>
-                    <input type="text" id="admin-item-source" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="https://x.com/...">
+                    <label class="block text-[11px] font-bold text-gray-400 mb-1">링크/출처 <span class="text-blue-400 font-normal">(텍스트 떡밥이면 비워둠)</span></label>
+                    <input type="text" id="admin-item-source" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px] focus:outline-none focus:border-blue-300" placeholder="https://x.com/...">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">직접 미디어 주소 (선택)</label>
-                    <input type="text" id="admin-item-media" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="직접 주소가 있으면 우선 적용">
+                    <label class="block text-[11px] font-bold text-gray-400 mb-1">직접 미디어 주소 (선택)</label>
+                    <input type="text" id="admin-item-media" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px] focus:outline-none focus:border-blue-300" placeholder="우선 적용됨">
                 </div>
             </div>
-            <div class="flex gap-2 mt-6">
-                <button onclick="window.closeAdminItemModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">취소</button>
-                <button onclick="window.saveAdminItem()" class="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl">저장</button>
+            <div class="flex gap-2 mt-5">
+                <button onclick="window.closeAdminItemModal()" class="flex-1 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
+                <button onclick="window.saveAdminItem()" class="flex-1 py-2 bg-blue-500 text-white font-bold rounded-xl text-[13px]">저장</button>
             </div>
         </div>
     </div>
 
     <!-- 관리자용 모달: 대량 추가 -->
     <div id="admin-bulk-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[24px] p-6 w-full max-w-md shadow-2xl">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">대량 항목 추가</h3>
-            <div class="bg-blue-50 text-blue-600 p-3 rounded-xl mb-4 text-xs">
-                <p class="font-bold mb-1">※ 입력 형식 (반드시 한 줄씩 띄어서 입력)</p>
-                <p class="font-bold text-gray-800">타이틀<br>링크 <span class="font-normal text-gray-500">(텍스트 항목은 생략)</span></p>
-                <div class="mt-2 pt-2 border-t border-blue-200 text-gray-500 font-mono text-[11px] leading-tight">
-                    [영상/이미지 예시]<br>
-                    귀여운 강아지<br>
-                    https://x.com/123<br><br>
-                    [텍스트 항목 예시]<br>
+        <div class="bg-white rounded-[20px] p-5 w-full max-w-[320px] shadow-2xl">
+            <h3 class="text-[15px] font-bold text-gray-900 mb-2">대량 항목 추가</h3>
+            <div class="bg-blue-50/50 text-blue-600 p-2.5 rounded-xl mb-3 text-[11px]">
+                <p class="font-bold mb-1 text-[12px]">※ 입력 형식 (줄바꿈 구분)</p>
+                <p class="font-bold text-gray-700">타이틀<br>링크 <span class="font-normal text-gray-400">(텍스트 항목은 생략)</span></p>
+                <div class="mt-1.5 pt-1.5 border-t border-blue-100/50 text-gray-400 font-mono text-[10px] leading-tight">
+                    [예시]<br>
+                    강아지<br>
+                    https://x.com/...<br><br>
                     순수 텍스트 떡밥
                 </div>
             </div>
-            <textarea id="admin-bulk-text" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm whitespace-pre flex-wrap" placeholder="여기에 텍스트를 붙여넣으세요..."></textarea>
-            <div class="flex gap-2 mt-6">
-                <button onclick="window.closeAdminBulkModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">취소</button>
-                <button onclick="window.processAdminBulk()" class="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl">일괄 추가</button>
+            <textarea id="admin-bulk-text" rows="6" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-[12px] whitespace-pre flex-wrap focus:outline-none focus:border-blue-300" placeholder="여기에 텍스트를 붙여넣으세요..."></textarea>
+            <div class="flex gap-2 mt-4">
+                <button onclick="window.closeAdminBulkModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
+                <button onclick="window.processAdminBulk()" class="flex-1 py-2.5 bg-blue-500 text-white font-bold rounded-xl text-[13px]">일괄 추가</button>
             </div>
         </div>
     </div>
@@ -187,7 +201,7 @@
         
         let db, auth, cupsCollectionRef;
 
-        // --- Custom UI Alert / Confirm Functions ---
+        // --- Custom UI Alerts & Prompts ---
         window.showAlert = function(msg) {
             document.getElementById('custom-alert-message').innerText = msg;
             const modal = document.getElementById('custom-alert-modal');
@@ -200,14 +214,13 @@
             const modal = document.getElementById('custom-alert-modal');
             const content = document.getElementById('custom-alert-content');
             content.classList.replace('opacity-100', 'opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
+            setTimeout(() => modal.classList.add('hidden'), 200);
         };
 
         let confirmCallback = null;
         window.showConfirm = function(msg, callback) {
             document.getElementById('custom-confirm-message').innerText = msg;
             confirmCallback = callback;
-            
             const modal = document.getElementById('custom-confirm-modal');
             const content = document.getElementById('custom-confirm-content');
             modal.classList.remove('hidden');
@@ -222,8 +235,46 @@
                 modal.classList.add('hidden');
                 if (confirmCallback) confirmCallback(result);
                 confirmCallback = null;
-            }, 300);
+            }, 200);
         };
+
+        // 관리자용 패스워드 모달
+        window.goAdmin = function() { 
+            document.getElementById('admin-password-input').value = '';
+            const modal = document.getElementById('custom-prompt-modal');
+            const content = document.getElementById('custom-prompt-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('admin-password-input').focus();
+            }, 10);
+        };
+
+        window.closeCustomPrompt = function(isConfirm) {
+            const modal = document.getElementById('custom-prompt-modal');
+            const content = document.getElementById('custom-prompt-content');
+            const pwd = document.getElementById('admin-password-input').value;
+
+            content.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (isConfirm) {
+                    if (pwd === '1028hqwc') {
+                        currentView = 'admin'; 
+                        window.render();
+                    } else {
+                        window.showAlert('비밀번호가 일치하지 않습니다.');
+                    }
+                }
+            }, 200);
+        };
+
+        // 엔터키로 패스워드 폼 제출 가능하게 처리
+        document.getElementById('admin-password-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.closeCustomPrompt(true);
+            }
+        });
 
 
         // --- Firebase Init ---
@@ -247,7 +298,7 @@
                             }
                         }, (error) => {
                             console.error("Firestore Snapshot Error:", error);
-                            window.showAlert("데이터를 불러오지 못했습니다. 파이어베이스 규칙을 확인해주세요.");
+                            window.showAlert("데이터 로드 실패: 규칙을 확인하세요.");
                         });
                     }
                 });
@@ -255,23 +306,19 @@
         }
 
         async function saveCupToDb(cup) {
-            if (!db || !auth.currentUser) {
-                throw new Error("파이어베이스가 연결되지 않았습니다.");
-            }
+            if (!db || !auth.currentUser) throw new Error("파이어베이스 미연결");
             try {
                 await setDoc(doc(cupsCollectionRef, cup.id.toString()), cup);
             } catch (error) {
                 console.error("Firebase Save Error:", error);
-                throw new Error("저장 실패: 권한이 없거나 파이어베이스 보안 규칙(Rules)이 막혀있습니다.");
+                throw new Error("저장 실패: 권한/보안 규칙 제한");
             }
         }
 
-        // --- 통합 월드컵 데이터 생성 함수 ---
         function getUnifiedCup() {
             let allItems = [];
             WORLD_CUPS.forEach(cup => {
                 cup.items.forEach(item => {
-                    // 원래 월드컵 ID를 기억해두어 승리 시 원본 카운트를 올려줄 수 있도록 함
                     allItems.push({ ...item, originalCupId: cup.id });
                 });
             });
@@ -293,63 +340,55 @@
                 mainHeader.style.display = 'none';
                 window.renderHome();
             } else if (currentView === 'game') {
-                mainHeader.style.display = 'block'; 
-                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">${selectedCup.title}</span>`;
+                mainHeader.style.display = 'flex'; 
+                headerTitle.innerText = selectedCup.title;
                 window.renderGame();
             } else if (currentView === 'result') {
-                mainHeader.style.display = 'block';
-                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">최종 결과</span>`;
+                mainHeader.style.display = 'flex';
+                headerTitle.innerText = "최종 결과";
                 window.renderResult();
             } else if (currentView === 'admin') {
-                mainHeader.style.display = 'block';
-                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">월드컵 관리자</span>`;
+                mainHeader.style.display = 'flex';
+                headerTitle.innerText = "관리자: 목록";
                 window.renderAdmin();
             } else if (currentView === 'admin-edit') {
-                mainHeader.style.display = 'block';
-                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">월드컵 수정/추가</span>`;
+                mainHeader.style.display = 'flex';
+                headerTitle.innerText = "관리자: 항목편집";
                 window.renderAdminEdit();
             }
         };
 
         window.renderHome = function() {
             const appContent = document.getElementById('app-content');
-            let html = `<div class="px-5 pt-8 pb-12 fade-in">
-                <div class="text-center mb-10 mt-4"><h2 class="text-3xl font-black tracking-tight text-gray-900">혚쾌 월드컵</h2></div>
-                <div class="flex flex-col gap-4">`;
+            let html = `<div class="px-4 pt-8 pb-10 fade-in">
+                <div class="text-center mb-8 mt-2"><h2 class="text-[22px] font-black tracking-tight text-gray-900 drop-shadow-sm">혚쾌 월드컵</h2></div>
+                <div class="flex flex-col gap-3">`;
 
             const unifiedCup = getUnifiedCup();
             const allCupsToRender = [];
-            
-            // 통합 월드컵은 최소 항목이 4개 이상일 때만 맨 위에 표시
-            if (unifiedCup.items.length >= 4) {
-                allCupsToRender.push(unifiedCup);
-            }
+            if (unifiedCup.items.length >= 4) allCupsToRender.push(unifiedCup);
             allCupsToRender.push(...WORLD_CUPS);
 
             allCupsToRender.forEach(cup => {
                 const totalItems = cup.items.length;
-                const isUnified = cup.id === 'all';
-                const borderClass = isUnified ? 'border-blue-200' : 'border-white/80';
-                const bgClass = 'bg-white/70';
-
                 html += `
-                <div class="${bgClass} backdrop-blur-md rounded-[24px] p-5 card-shadow border ${borderClass} group relative overflow-hidden">
-                    <div class="flex items-center mb-4 cursor-pointer" onclick="window.showBracketModal('${cup.id}')">
-                        <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-2xl mr-4 border border-gray-100 shadow-sm flex-shrink-0">${cup.icon}</div>
+                <div class="bg-white/70 backdrop-blur-md rounded-[20px] p-4 card-shadow border border-white/80 group">
+                    <div class="flex items-center mb-3 cursor-pointer" onclick="window.showBracketModal('${cup.id}')">
+                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-lg mr-3 border border-gray-100 shadow-sm flex-shrink-0">${cup.icon}</div>
                         <div class="flex-grow text-left min-w-0">
-                            <h3 class="font-bold text-gray-800 text-[17px] truncate">${cup.title}</h3>
-                            <p class="text-[12px] ${isUnified ? 'text-blue-500 font-bold' : 'text-gray-400'}">총 <span class="font-black">${totalItems}</span>개의 후보</p>
+                            <h3 class="font-bold text-gray-800 text-[14px] truncate">${cup.title}</h3>
+                            <p class="text-[11px] text-gray-400">후보 <span class="font-bold text-blue-500">${totalItems}</span>개</p>
                         </div>
-                        <div class="text-blue-500 text-sm pl-2 flex-shrink-0"><i class="fa-solid fa-play"></i></div>
+                        <div class="text-blue-500 text-xs pl-2 flex-shrink-0"><i class="fa-solid fa-play"></i></div>
                     </div>
-                    <button onclick="window.openRanking('${cup.id}')" class="w-full py-2.5 bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-blue-500 font-bold rounded-xl text-[12px] transition-all flex items-center justify-center gap-2 border border-gray-50">
+                    <button onclick="window.openRanking('${cup.id}')" class="w-full py-2 bg-gray-50/80 hover:bg-blue-50 text-gray-400 hover:text-blue-500 font-bold rounded-xl text-[11px] transition-colors flex items-center justify-center gap-1.5 border border-gray-50">
                         <i class="fa-solid fa-crown text-[10px]"></i> 랭킹 보기
                     </button>
                 </div>`;
             });
 
             html += `</div>
-                <div class="text-center mt-12"><button onclick="window.goAdmin()" class="text-xs font-bold text-blue-400 bg-blue-50/50 px-4 py-2 rounded-full hover:bg-blue-50 transition"><i class="fa-solid fa-gear mr-1"></i> 관리자 모드</button></div>
+                <div class="text-center mt-8"><button onclick="window.goAdmin()" class="text-[10px] font-bold text-gray-300 hover:text-gray-400 transition bg-transparent"><i class="fa-solid fa-gear mr-1"></i> 관리자</button></div>
             </div>`;
             appContent.innerHTML = html;
         };
@@ -365,17 +404,17 @@
                 const count = item.winCount || 0;
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
                 return `
-                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div class="w-8 font-black text-center text-gray-400">${medal}</div>
+                <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-[14px] border border-gray-100/50">
+                    <div class="w-6 font-black text-center text-gray-400 text-[12px]">${medal}</div>
                     <button onclick="window.showItemPreview('${cupId}', ${item.id})" class="flex-grow text-left min-w-0">
-                        <p class="font-bold text-gray-800 text-sm truncate">${item.name}</p>
-                        <p class="text-[10px] text-gray-400">${item.date || (cupId === 'all' && item.originalCupId ? '통합 데이터' : '')}</p>
+                        <p class="font-bold text-gray-800 text-[12px] truncate">${item.name}</p>
+                        <p class="text-[9px] text-gray-400">${item.date || (cupId === 'all' && item.originalCupId ? '통합데이터' : '')}</p>
                     </button>
-                    <div class="text-blue-500 font-black text-sm pr-2">${count}<span class="text-[10px] ml-0.5 font-bold">승</span></div>
+                    <div class="text-blue-500 font-black text-[12px] pr-2">${count}<span class="text-[9px] ml-0.5 font-bold">승</span></div>
                 </div>`;
             }).join('');
 
-            document.getElementById('ranking-list').innerHTML = listHtml || `<p class="text-center py-10 text-gray-400 text-sm">아직 우승 기록이 없습니다.</p>`;
+            document.getElementById('ranking-list').innerHTML = listHtml || `<p class="text-center py-8 text-gray-400 text-xs">기록이 없습니다.</p>`;
             
             const modal = document.getElementById('ranking-modal');
             const content = document.getElementById('ranking-modal-content');
@@ -392,34 +431,23 @@
         window.showItemPreview = function(cupId, itemId) {
             const cup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
             const item = cup.items.find(i => i.id == itemId);
-            if (!item.sourceUrl && !item.mediaUrl) {
-                window.showAlert(`[텍스트 떡밥]\n\n${item.name}`);
-            } else if (item.mediaUrl) {
-                window.showFullMedia(item.mediaUrl, item.isVideo);
-            } else {
-                window.showAlert("이미지가 로드되지 않았습니다.");
-            }
+            if (!item.sourceUrl && !item.mediaUrl) window.showAlert(`[텍스트]\n\n${item.name}`);
+            else if (item.mediaUrl) window.showFullMedia(item.mediaUrl, item.isVideo);
+            else window.showAlert("로딩중...");
         };
 
         window.showGameMedia = function(itemId) {
             const item = roundItems.find(i => i.id == itemId);
             if(!item) return;
-            if (!item.sourceUrl && !item.mediaUrl) {
-                window.showAlert(`[텍스트 떡밥]\n\n${item.name}`);
-            } else if (item.mediaUrl) {
-                window.showFullMedia(item.mediaUrl, item.isVideo);
-            } else {
-                window.showAlert('미디어를 불러오는 중입니다...');
-            }
+            if (!item.sourceUrl && !item.mediaUrl) window.showAlert(`[텍스트]\n\n${item.name}`);
+            else if (item.mediaUrl) window.showFullMedia(item.mediaUrl, item.isVideo);
+            else window.showAlert('미디어 로딩중...');
         };
 
         window.showResultMedia = function() {
             if (!winner) return;
-            if (!winner.sourceUrl && !winner.mediaUrl) {
-                window.showAlert(`[텍스트 떡밥]\n\n${winner.name}`);
-            } else if (winner.mediaUrl) {
-                window.showFullMedia(winner.mediaUrl, winner.isVideo);
-            }
+            if (!winner.sourceUrl && !winner.mediaUrl) window.showAlert(`[텍스트]\n\n${winner.name}`);
+            else if (winner.mediaUrl) window.showFullMedia(winner.mediaUrl, winner.isVideo);
         };
 
         window.renderGame = function() {
@@ -429,24 +457,23 @@
             const item1 = roundItems[matchIndex], item2 = roundItems[matchIndex + 1];
 
             appContent.innerHTML = `
-                <div class="px-5 pt-6 pb-8 fade-in h-full flex flex-col">
-                    <div class="text-center mb-8">
-                        <p class="text-gray-400 text-sm font-medium">${currentRound} ${Math.floor(matchIndex/2)+1}/${roundItems.length/2}</p>
-                        <button onclick="window.goHome()" class="mt-2 px-3 py-1 bg-blue-50 text-blue-500 text-[11px] font-bold rounded-full">메인으로</button>
+                <div class="px-4 pt-4 pb-6 fade-in h-full flex flex-col">
+                    <div class="text-center mb-6">
+                        <p class="text-gray-400 text-[12px] font-bold">${currentRound} ${Math.floor(matchIndex/2)+1}/${roundItems.length/2}</p>
                     </div>
-                    <div class="relative flex justify-center items-center gap-3 mb-10 h-[35vh]">
-                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center font-black text-xs shadow-md border border-gray-100">VS</div>
-                        <div onclick="window.showGameMedia('${item1.id}')" id="img-card-${item1.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item1)}</div>
-                        <div onclick="window.showGameMedia('${item2.id}')" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item2)}</div>
+                    <div class="relative flex justify-center items-center gap-2.5 mb-8 h-[30vh]">
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white rounded-full flex items-center justify-center font-black text-[10px] text-gray-500 shadow-sm border border-gray-100">VS</div>
+                        <div onclick="window.showGameMedia('${item1.id}')" id="img-card-${item1.id}" class="select-transition flex-1 h-full bg-gray-50 rounded-[16px] overflow-hidden cursor-pointer relative border border-gray-100">${getMediaInnerHtml(item1)}</div>
+                        <div onclick="window.showGameMedia('${item2.id}')" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-50 rounded-[16px] overflow-hidden cursor-pointer relative border border-gray-100">${getMediaInnerHtml(item2)}</div>
                     </div>
-                    <div class="flex flex-col gap-3 mt-auto">
-                        <button onclick="window.handlePick('${item1.id}')" id="btn-${item1.id}" class="select-transition w-full bg-white/80 rounded-[20px] p-5 text-left card-shadow border border-white flex justify-between">
-                            <span class="font-bold text-gray-800 text-[15px] truncate pr-2">${item1.name}</span>
-                            <span class="text-xs text-gray-300 font-medium">${item1.date || ''}</span>
+                    <div class="flex flex-col gap-2.5 mt-auto">
+                        <button onclick="window.handlePick('${item1.id}')" id="btn-${item1.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center">
+                            <span class="font-bold text-gray-800 text-[14px] truncate pr-2 leading-tight">${item1.name}</span>
+                            <span class="text-[10px] text-gray-300 font-medium shrink-0">${item1.date || ''}</span>
                         </button>
-                        <button onclick="window.handlePick('${item2.id}')" id="btn-${item2.id}" class="select-transition w-full bg-white/80 rounded-[20px] p-5 text-left card-shadow border border-white flex justify-between">
-                            <span class="font-bold text-gray-800 text-[15px] truncate pr-2">${item2.name}</span>
-                            <span class="text-xs text-gray-300 font-medium">${item2.date || ''}</span>
+                        <button onclick="window.handlePick('${item2.id}')" id="btn-${item2.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center">
+                            <span class="font-bold text-gray-800 text-[14px] truncate pr-2 leading-tight">${item2.name}</span>
+                            <span class="text-[10px] text-gray-300 font-medium shrink-0">${item2.date || ''}</span>
                         </button>
                     </div>
                 </div>`;
@@ -463,6 +490,7 @@
             document.getElementById(`img-card-${sel.id}`).classList.add('selected-item');
             document.getElementById(`btn-${sel.id}`).classList.add('selected-item');
             document.getElementById(`img-card-${other.id}`).classList.add('unselected-item');
+            document.getElementById(`btn-${other.id}`).classList.add('unselected-item');
 
             setTimeout(async () => {
                 nextRoundItems.push(sel);
@@ -470,16 +498,13 @@
                     if (nextRoundItems.length === 1) {
                         winner = nextRoundItems[0];
                         currentView = 'result';
-                        
-                        // 우승 카운트 업데이트 로직 (통합 월드컵 우승 시 원래 월드컵 전적에 반영)
                         let targetCupId = selectedCup.id === 'all' ? winner.originalCupId : selectedCup.id;
-                        
                         const cupIdx = WORLD_CUPS.findIndex(c => c.id == targetCupId);
                         if(cupIdx > -1) {
                             const itemIdx = WORLD_CUPS[cupIdx].items.findIndex(i => i.id == winner.id);
                             if(itemIdx > -1) {
                                 WORLD_CUPS[cupIdx].items[itemIdx].winCount = (WORLD_CUPS[cupIdx].items[itemIdx].winCount || 0) + 1;
-                                try { await saveCupToDb(WORLD_CUPS[cupIdx]); } catch(e){} // 무음 처리
+                                try { await saveCupToDb(WORLD_CUPS[cupIdx]); } catch(e){}
                             }
                         }
                     } else {
@@ -490,25 +515,23 @@
                 } else { matchIndex += 2; }
                 isTransitioning = false;
                 window.render();
-            }, 500);
+            }, 400);
         };
 
-        // --- Utils ---
-        function getMediaInnerHtml(item, isRes = false) {
+        function getMediaInnerHtml(item) {
             if (!item.sourceUrl && !item.mediaUrl) {
-                return `<div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-6 text-center">
-                            <span class="font-black text-[18px] sm:text-xl text-gray-800 break-keep leading-snug drop-shadow-sm">${item.name}</span>
+                return `<div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-center">
+                            <span class="font-black text-[15px] text-gray-700 break-keep leading-snug drop-shadow-sm">${item.name}</span>
                         </div>`;
             }
-            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-xs">미디어 로드중</div>`;
+            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-[10px]">로딩중</div>`;
             if(item.isVideo) return `<video src="${item.mediaUrl}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>`;
             return `<img src="${item.mediaUrl}" class="absolute inset-0 w-full h-full object-cover" />`;
         }
 
         async function loadMediaIfNeeded(item, containerId) {
-            if (item.mediaUrl) return;
+            if (item.mediaUrl || !item.sourceUrl) return;
             try {
-                if(!item.sourceUrl) return; 
                 const urlObj = new URL(item.sourceUrl);
                 const res = await fetch(`https://api.vxtwitter.com${urlObj.pathname}`);
                 const data = await res.json();
@@ -518,7 +541,7 @@
                     const container = document.getElementById(containerId);
                     if (container) container.innerHTML = getMediaInnerHtml(item);
                 }
-            } catch (e) { console.error("Media load err", e); }
+            } catch (e) {}
         }
 
         window.startCup = function(cupId, size) {
@@ -534,7 +557,7 @@
             document.getElementById('bracket-modal-title').innerText = cup.title;
             let opts = '';
             [128, 64, 32, 16, 8, 4].filter(s => s <= cup.items.length).forEach(s => {
-                opts += `<button onclick="window.startCup('${id}', ${s})" class="py-3 bg-blue-50 text-blue-600 font-bold rounded-xl">${s}강</button>`;
+                opts += `<button onclick="window.startCup('${id}', ${s})" class="py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl text-[13px]">${s}강</button>`;
             });
             document.getElementById('bracket-options').innerHTML = opts;
             document.getElementById('bracket-modal').classList.remove('hidden');
@@ -544,9 +567,9 @@
         window.closeBracketModal = function() { document.getElementById('bracket-modal').classList.add('hidden'); };
         
         window.showFullMedia = function(url, isV) {
-            if(!url || url === 'undefined') return window.showAlert('미디어 링크가 아직 로드되지 않았거나 존재하지 않습니다.');
+            if(!url || url === 'undefined') return;
             const content = document.getElementById('media-modal-content');
-            content.innerHTML = isV ? `<video src="${url}" controls autoplay class="max-w-full max-h-[90vh] rounded-xl"></video>` : `<img src="${url}" class="max-w-full max-h-[90vh] rounded-xl" />`;
+            content.innerHTML = isV ? `<video src="${url}" controls autoplay class="max-w-full max-h-[85vh] rounded-xl"></video>` : `<img src="${url}" class="max-w-full max-h-[85vh] rounded-xl" />`;
             document.getElementById('media-modal').classList.remove('hidden');
         };
 
@@ -559,65 +582,55 @@
 
         window.renderResult = function() {
             document.getElementById('app-content').innerHTML = `
-                <div class="px-5 pt-10 pb-12 fade-in text-center flex flex-col justify-center">
-                    <div class="mb-4 inline-flex items-center space-x-1.5 bg-blue-50 text-blue-500 px-3 py-1.5 rounded-full font-bold text-sm mx-auto"><i class="fa-solid fa-crown"></i><span>최종 우승</span></div>
-                    <div onclick="window.showResultMedia()" class="w-full max-w-[280px] mx-auto aspect-square bg-gray-100 rounded-[32px] shadow-lg relative overflow-hidden mb-8 cursor-pointer">${getMediaInnerHtml(winner)}</div>
-                    <h3 class="font-black text-xl text-gray-800 mb-1">${winner.name}</h3>
-                    <div class="flex flex-col gap-3 mt-8">
-                        <button onclick="window.showBracketModal('${selectedCup.id}')" class="w-full py-4 bg-white text-gray-800 font-bold rounded-2xl border border-gray-100">다시 하기</button>
-                        <button onclick="window.goHome()" class="w-full py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl">홈으로</button>
+                <div class="px-5 pt-8 pb-10 fade-in text-center flex flex-col justify-center">
+                    <div class="mb-3 inline-flex items-center space-x-1 bg-blue-50 text-blue-500 px-3 py-1 rounded-full font-bold text-[11px] mx-auto"><i class="fa-solid fa-crown"></i><span>최종 우승</span></div>
+                    <div onclick="window.showResultMedia()" class="w-full max-w-[200px] mx-auto aspect-square bg-gray-50 rounded-[24px] shadow-md border border-gray-100 relative overflow-hidden mb-6 cursor-pointer">${getMediaInnerHtml(winner)}</div>
+                    <h3 class="font-black text-[18px] text-gray-800 mb-1 px-4 leading-snug">${winner.name}</h3>
+                    <div class="flex flex-col gap-2 mt-8">
+                        <button onclick="window.showBracketModal('${selectedCup.id}')" class="w-full py-3 bg-white text-gray-800 font-bold rounded-[14px] border border-gray-200 text-[13px] shadow-sm">다시 하기</button>
+                        <button onclick="window.goHome()" class="w-full py-3 bg-gray-100 text-gray-500 font-bold rounded-[14px] text-[13px] hover:bg-gray-200">홈으로</button>
                     </div>
                 </div>`;
         };
 
         // --- 관리자 기능 ---
-        window.goAdmin = function() { currentView = 'admin'; window.render(); };
-
         window.renderAdmin = function() {
             const appContent = document.getElementById('app-content');
             let html = `
-                <div class="px-5 pt-6 pb-12 fade-in">
-                    <button onclick="window.adminCreateCup()" class="w-full py-4 bg-blue-50 text-blue-500 border border-blue-100 border-dashed rounded-2xl font-bold mb-6 hover:bg-blue-100 transition-colors">
+                <div class="px-4 pt-5 pb-10 fade-in">
+                    <button onclick="window.adminCreateCup()" class="w-full py-3 bg-blue-50 text-blue-500 border border-blue-100 border-dashed rounded-xl font-bold mb-5 hover:bg-blue-100 transition-colors text-[13px]">
                         <i class="fa-solid fa-plus mr-1"></i> 새 월드컵 만들기
                     </button>
                     
-                    <h3 class="font-bold text-sm text-gray-500 mb-3">생성된 월드컵 목록</h3>
-                    <div class="flex flex-col gap-3">
+                    <h3 class="font-bold text-[11px] text-gray-400 mb-2 pl-1">생성된 월드컵 목록</h3>
+                    <div class="flex flex-col gap-2">
             `;
 
-            if(WORLD_CUPS.length === 0) {
-                html += `<p class="text-center text-gray-400 text-sm py-8">생성된 월드컵이 없습니다.</p>`;
-            }
+            if(WORLD_CUPS.length === 0) html += `<p class="text-center text-gray-400 text-xs py-6">월드컵이 없습니다.</p>`;
 
             WORLD_CUPS.forEach(cup => {
                 html += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="text-2xl">${cup.icon}</div>
+                    <div class="bg-white p-3 rounded-[16px] shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="text-xl w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full">${cup.icon}</div>
                             <div>
-                                <h4 class="font-bold text-gray-800 text-sm">${cup.title}</h4>
-                                <p class="text-[11px] text-gray-400">총 후보 ${cup.items.length}개</p>
+                                <h4 class="font-bold text-gray-800 text-[13px]">${cup.title}</h4>
+                                <p class="text-[10px] text-gray-400">후보 ${cup.items.length}개</p>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="window.adminEditCup(${cup.id})" class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-100">수정</button>
-                            <button onclick="window.adminDeleteCup(${cup.id})" class="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-bold hover:bg-red-100">삭제</button>
+                        <div class="flex gap-1.5">
+                            <button onclick="window.adminEditCup(${cup.id})" class="px-2.5 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-100">수정</button>
+                            <button onclick="window.adminDeleteCup(${cup.id})" class="px-2.5 py-1.5 bg-red-50 text-red-500 rounded-lg text-[11px] font-bold hover:bg-red-100">삭제</button>
                         </div>
                     </div>
                 `;
             });
-
             html += `</div></div>`;
             appContent.innerHTML = html;
         };
 
         window.adminCreateCup = function() {
-            editingCup = {
-                id: Date.now(),
-                title: '새로운 혚쾌 월드컵',
-                icon: '🏆',
-                items: []
-            };
+            editingCup = { id: Date.now(), title: '새로운 혚쾌 월드컵', icon: '🏆', items: [] };
             currentView = 'admin-edit';
             window.render();
         };
@@ -631,24 +644,20 @@
         };
 
         window.adminDeleteCup = async function(cupId) {
-            window.showConfirm('정말로 이 월드컵을 삭제하시겠습니까?\n내부의 모든 데이터가 영구적으로 사라집니다.', async (agreed) => {
+            window.showConfirm('정말로 이 월드컵을 삭제하시겠습니까?', async (agreed) => {
                 if(!agreed) return;
                 try {
                     await deleteDoc(doc(cupsCollectionRef, cupId.toString()));
                     WORLD_CUPS = WORLD_CUPS.filter(c => c.id != cupId);
                     window.renderAdmin();
-                    window.showAlert('월드컵이 성공적으로 삭제되었습니다.');
-                } catch (e) {
-                    console.error(e);
-                    window.showAlert('삭제 실패: 파이어베이스 규칙(Rules)을 확인해주세요.');
-                }
+                    window.showAlert('삭제되었습니다.');
+                } catch (e) { window.showAlert('삭제 실패: 권한 부족'); }
             });
         };
 
         window.adminToggleSelectAll = function() {
             const isChecked = document.getElementById('selectAll').checked;
-            const checkboxes = document.querySelectorAll('.item-checkbox');
-            checkboxes.forEach(cb => cb.checked = isChecked);
+            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = isChecked);
         };
 
         window.adminDeleteItem = function(itemId) {
@@ -656,32 +665,19 @@
                 if(!agreed) return;
                 editingCup.items = editingCup.items.filter(i => i.id != itemId);
                 window.renderAdminEdit();
-                
-                try { 
-                    await saveCupToDb(editingCup); 
-                } catch(e) {
-                    window.showAlert(e.message);
-                }
+                try { await saveCupToDb(editingCup); } catch(e) {}
             });
         };
 
         window.adminDeleteSelected = function() {
             const checkboxes = document.querySelectorAll('.item-checkbox:checked');
-            if (checkboxes.length === 0) {
-                return window.showAlert('삭제할 항목을 하나 이상 체크해주세요.');
-            }
-            
-            window.showConfirm(`선택한 ${checkboxes.length}개의 항목을 삭제하시겠습니까?`, async (agreed) => {
+            if (checkboxes.length === 0) return window.showAlert('항목을 선택해주세요.');
+            window.showConfirm(`${checkboxes.length}개를 삭제하시겠습니까?`, async (agreed) => {
                 if(!agreed) return;
-                const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
-                editingCup.items = editingCup.items.filter(item => !idsToDelete.includes(item.id));
+                const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+                editingCup.items = editingCup.items.filter(item => !ids.includes(item.id));
                 window.renderAdminEdit();
-                
-                try { 
-                    await saveCupToDb(editingCup); 
-                } catch(e) {
-                    window.showAlert(e.message);
-                }
+                try { await saveCupToDb(editingCup); } catch(e) {}
             });
         };
 
@@ -691,65 +687,59 @@
             
             editingCup.items.forEach(item => {
                 const isTextOnly = !item.sourceUrl && !item.mediaUrl;
-                let thumbHtml = '';
-                
-                if (isTextOnly) {
-                    thumbHtml = `<div class="flex items-center justify-center h-full w-full text-lg font-black text-blue-500 bg-blue-50">T</div>`;
-                } else if (item.mediaUrl) {
-                    thumbHtml = item.isVideo ? `<video src="${item.mediaUrl}" class="w-full h-full object-cover"></video>` : `<img src="${item.mediaUrl}" class="w-full h-full object-cover">`;
-                } else {
-                    thumbHtml = `<div class="flex items-center justify-center h-full w-full text-[10px] text-gray-400 bg-gray-100">로드중</div>`;
-                }
+                let thumbHtml = isTextOnly ? `<div class="flex items-center justify-center h-full w-full text-[13px] font-black text-blue-400 bg-blue-50/50">T</div>` 
+                                  : (item.mediaUrl ? (item.isVideo ? `<video src="${item.mediaUrl}" class="w-full h-full object-cover"></video>` : `<img src="${item.mediaUrl}" class="w-full h-full object-cover">`) 
+                                  : `<div class="flex items-center justify-center h-full w-full text-[8px] text-gray-400 bg-gray-50">.</div>`);
 
                 itemsHtml += `
-                    <div class="flex items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm gap-3 cursor-pointer" onclick="document.getElementById('chk-${item.id}').click()">
-                        <input type="checkbox" id="chk-${item.id}" value="${item.id}" class="item-checkbox w-4 h-4" onclick="event.stopPropagation()">
-                        <div class="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden relative border border-gray-100">
+                    <div class="flex items-center bg-white p-2.5 rounded-[14px] border border-gray-100 shadow-sm gap-2.5 cursor-pointer" onclick="document.getElementById('chk-${item.id}').click()">
+                        <input type="checkbox" id="chk-${item.id}" value="${item.id}" class="item-checkbox w-3.5 h-3.5" onclick="event.stopPropagation()">
+                        <div class="w-9 h-9 rounded-[10px] flex-shrink-0 overflow-hidden relative border border-gray-100">
                             ${thumbHtml}
                         </div>
                         <div class="flex-grow min-w-0">
-                            <p class="text-sm font-bold text-gray-800 truncate">${item.name}</p>
-                            <p class="text-[10px] text-gray-400 truncate">${item.sourceUrl || item.mediaUrl || '텍스트 항목'}</p>
+                            <p class="text-[13px] font-bold text-gray-800 truncate leading-tight">${item.name}</p>
+                            <p class="text-[9px] text-gray-400 truncate mt-0.5">${item.sourceUrl || item.mediaUrl || '텍스트 항목'}</p>
                         </div>
                         <div class="flex gap-1 flex-shrink-0">
-                            <button onclick="event.stopPropagation(); window.adminShowItemModal(${item.id})" class="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="event.stopPropagation(); window.adminDeleteItem(${item.id})" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); window.adminShowItemModal(${item.id})" class="w-7 h-7 flex items-center justify-center bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                            <button onclick="event.stopPropagation(); window.adminDeleteItem(${item.id})" class="w-7 h-7 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i class="fa-solid fa-trash text-[10px]"></i></button>
                         </div>
                     </div>
                 `;
             });
 
             if (editingCup.items.length === 0) {
-                itemsHtml = `<p class="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-200 rounded-xl">등록된 떡밥이 없습니다.<br>추가 버튼을 눌러주세요.</p>`;
+                itemsHtml = `<p class="text-center text-gray-400 text-xs py-8 border border-dashed border-gray-200 rounded-xl">등록된 떡밥이 없습니다.</p>`;
             }
 
             appContent.innerHTML = `
-                <div class="px-5 pt-6 pb-12 fade-in">
-                    <div class="flex items-center justify-between mb-6">
-                        <button onclick="window.goAdmin()" class="text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> 목록으로</button>
-                        <button onclick="window.adminSaveCup()" class="bg-blue-500 text-white px-5 py-2 rounded-full font-bold text-sm shadow-md">저장 및 배포</button>
+                <div class="px-4 pt-4 pb-12 fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="window.goAdmin()" class="text-gray-500 font-bold text-[12px]"><i class="fa-solid fa-arrow-left"></i> 목록</button>
+                        <button onclick="window.adminSaveCup()" class="bg-blue-500 text-white px-4 py-1.5 rounded-full font-bold text-[12px] shadow-sm">저장 및 배포</button>
                     </div>
                     
-                    <div class="bg-white rounded-2xl p-4 shadow-sm mb-6 border border-gray-100">
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-gray-500 mb-1">월드컵 제목</label>
-                            <input type="text" id="edit-cup-title" value="${editingCup.title}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold">
+                    <div class="bg-white rounded-[16px] p-3.5 shadow-sm mb-5 border border-gray-100">
+                        <div class="mb-3">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1">월드컵 제목</label>
+                            <input type="text" id="edit-cup-title" value="${editingCup.title}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] font-bold focus:outline-none focus:border-blue-300">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1">아이콘 (이모지 1개)</label>
-                            <input type="text" id="edit-cup-icon" value="${editingCup.icon}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1">아이콘 (이모지 1개)</label>
+                            <input type="text" id="edit-cup-icon" value="${editingCup.icon}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] focus:outline-none focus:border-blue-300">
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="selectAll" onclick="window.adminToggleSelectAll()" class="w-4 h-4 ml-1 cursor-pointer">
-                            <h3 class="font-bold text-gray-800">후보 <span class="text-blue-500 font-black">${editingCup.items.length}</span></h3>
+                    <div class="flex items-center justify-between mb-2.5">
+                        <div class="flex items-center gap-1.5">
+                            <input type="checkbox" id="selectAll" onclick="window.adminToggleSelectAll()" class="w-3.5 h-3.5 ml-1 cursor-pointer">
+                            <h3 class="font-bold text-gray-800 text-[12px]">후보 <span class="text-blue-500">${editingCup.items.length}</span></h3>
                         </div>
                         <div class="flex gap-1.5">
-                            <button onclick="window.adminDeleteSelected()" class="text-[11px] bg-red-50 text-red-500 px-2 py-1.5 rounded-lg font-bold hover:bg-red-100 border border-red-100">선택삭제</button>
-                            <button onclick="window.adminShowBulkModal()" class="text-[11px] bg-gray-100 text-gray-600 px-2 py-1.5 rounded-lg font-bold hover:bg-gray-200">대량추가</button>
-                            <button onclick="window.adminShowItemModal()" class="text-[11px] bg-blue-50 text-blue-500 px-2 py-1.5 rounded-lg font-bold hover:bg-blue-100">추가</button>
+                            <button onclick="window.adminDeleteSelected()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-md font-bold hover:bg-red-100">선택삭제</button>
+                            <button onclick="window.adminShowBulkModal()" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-bold hover:bg-gray-200">대량추가</button>
+                            <button onclick="window.adminShowItemModal()" class="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded-md font-bold hover:bg-blue-100">추가</button>
                         </div>
                     </div>
 
@@ -763,7 +753,6 @@
         window.adminSaveCup = async function() {
             const title = document.getElementById('edit-cup-title').value.trim();
             const icon = document.getElementById('edit-cup-icon').value.trim();
-            
             if(!title) return window.showAlert('월드컵 제목을 입력해주세요.');
             
             editingCup.title = title;
@@ -771,17 +760,13 @@
             
             try {
                 await saveCupToDb(editingCup);
-                window.showAlert('성공적으로 저장 및 배포되었습니다!');
+                window.showAlert('저장되었습니다!');
                 window.goAdmin();
-            } catch (e) {
-                window.showAlert(e.message);
-            }
+            } catch (e) { window.showAlert(e.message); }
         };
 
         window.adminShowItemModal = function(itemId = null) {
-            const modal = document.getElementById('admin-item-modal');
-            modal.classList.remove('hidden');
-            
+            document.getElementById('admin-item-modal').classList.remove('hidden');
             if (itemId) {
                 document.getElementById('admin-item-modal-title').innerText = '항목 수정';
                 const item = editingCup.items.find(i => i.id == itemId);
@@ -821,18 +806,11 @@
             if (id) {
                 const idx = editingCup.items.findIndex(i => i.id == parseInt(id));
                 if(idx > -1) editingCup.items[idx] = itemData;
-            } else {
-                editingCup.items.push(itemData);
-            }
+            } else { editingCup.items.push(itemData); }
 
             window.closeAdminItemModal();
             window.renderAdminEdit();
-            
-            try { 
-                await saveCupToDb(editingCup); 
-            } catch(e) {
-                window.showAlert(e.message);
-            }
+            try { await saveCupToDb(editingCup); } catch(e) {}
         };
 
         window.adminShowBulkModal = function() {
@@ -844,25 +822,19 @@
 
         window.processAdminBulk = async function() {
             const text = document.getElementById('admin-bulk-text').value.trim();
-            if (!text) {
-                return window.showAlert('입력된 텍스트가 없습니다.');
-            }
+            if (!text) return window.showAlert('텍스트가 없습니다.');
 
             const blocks = text.split(/\n\s*\n/);
             let addedCount = 0;
             
             blocks.forEach((block, index) => {
                 const lines = block.split('\n').map(line => line.trim()).filter(line => line !== '');
-                
                 if (lines.length >= 1) {
-                    const title = lines[0]; 
-                    const link = lines[1] || ''; 
-                    
                     editingCup.items.push({
                         id: Date.now() + index,
-                        name: title,
+                        name: lines[0],
                         date: '',
-                        sourceUrl: link, 
+                        sourceUrl: lines[1] || '', 
                         mediaUrl: '',
                         isVideo: false,
                         winCount: 0
@@ -876,12 +848,10 @@
                 window.renderAdminEdit();
                 try { 
                     await saveCupToDb(editingCup); 
-                    window.showAlert(`${addedCount}개의 항목이 추가되고 저장되었습니다.`);
-                } catch(e) {
-                    window.showAlert(e.message);
-                }
+                    window.showAlert(`${addedCount}개 추가됨.`);
+                } catch(e) { window.showAlert(e.message); }
             } else {
-                window.showAlert('추가된 항목이 없습니다.\n입력 형식을 다시 확인해주세요.');
+                window.showAlert('입력 형식을 확인해주세요.');
             }
         };
 
@@ -889,6 +859,5 @@
     </script>
 </body>
 </html>
-
 
 
