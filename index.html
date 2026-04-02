@@ -33,9 +33,10 @@
         .unselected-item { transform: scale(0.95); opacity: 0.4; filter: grayscale(50%); pointer-events: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        input[type="checkbox"] { accent-color: #ef4444; cursor: pointer; }
     </style>
 </head>
-<body class="text-gray-800 font-sans min-h-screen flex flex-col antialiased">
+<body class="text-gray-800 font-sans min-h-screen flex flex-col antialiased relative">
 
     <header id="main-header" class="sticky top-0 z-50 bg-white/40 backdrop-blur-md" style="display: none;">
         <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
@@ -56,6 +57,25 @@
         </div>
     </main>
 
+    <!-- 자체 제작 알림창 (Alert/Confirm) -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-xs shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-300" id="custom-alert-content">
+            <p id="custom-alert-message" class="text-gray-800 font-bold mb-6 whitespace-pre-wrap leading-relaxed text-[15px]"></p>
+            <button onclick="window.closeCustomAlert()" class="w-full py-3.5 bg-blue-500 hover:bg-blue-600 transition-colors text-white font-bold rounded-xl text-[15px]">확인</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-xs shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-300" id="custom-confirm-content">
+            <p id="custom-confirm-message" class="text-gray-800 font-bold mb-6 whitespace-pre-wrap leading-relaxed text-[15px]"></p>
+            <div class="flex gap-2">
+                <button onclick="window.closeCustomConfirm(false)" class="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600 font-bold rounded-xl text-[15px]">취소</button>
+                <button onclick="window.closeCustomConfirm(true)" class="flex-1 py-3.5 bg-red-500 hover:bg-red-600 transition-colors text-white font-bold rounded-xl text-[15px]" id="custom-confirm-btn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 각종 모달들 -->
     <div id="ranking-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-end justify-center">
         <div class="bg-white rounded-t-[32px] w-full max-w-md p-6 shadow-2xl transform translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col" id="ranking-modal-content">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
@@ -64,8 +84,7 @@
                 <button onclick="window.closeRankingModal()" class="text-gray-400 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <p class="text-xs text-gray-500 mb-4 font-medium">※ 목록의 제목을 누르면 떡밥 확인이 가능합니다.</p>
-            <div id="ranking-list" class="overflow-y-auto flex-grow hide-scrollbar space-y-3 pb-6">
-            </div>
+            <div id="ranking-list" class="overflow-y-auto flex-grow hide-scrollbar space-y-3 pb-6"></div>
         </div>
     </div>
 
@@ -85,6 +104,59 @@
             <i class="fa-solid fa-xmark text-3xl"></i>
         </button>
         <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <!-- 관리자용 모달: 항목 추가/수정 -->
+    <div id="admin-item-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-900 mb-4" id="admin-item-modal-title">항목 추가</h3>
+            <input type="hidden" id="admin-item-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">후보 이름</label>
+                    <input type="text" id="admin-item-name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="예: 혚쾌 떡밥">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">날짜/설명 (선택)</label>
+                    <input type="text" id="admin-item-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="예: 2024.03.15">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">링크/출처 <span class="text-blue-500 font-normal">(텍스트 떡밥이면 비워둠)</span></label>
+                    <input type="text" id="admin-item-source" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="https://x.com/...">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">직접 미디어 주소 (선택)</label>
+                    <input type="text" id="admin-item-media" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="직접 주소가 있으면 우선 적용">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="window.closeAdminItemModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">취소</button>
+                <button onclick="window.saveAdminItem()" class="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 관리자용 모달: 대량 추가 -->
+    <div id="admin-bulk-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">대량 항목 추가</h3>
+            <div class="bg-blue-50 text-blue-600 p-3 rounded-xl mb-4 text-xs">
+                <p class="font-bold mb-1">※ 입력 형식 (반드시 한 줄씩 띄어서 입력)</p>
+                <p class="font-bold text-gray-800">타이틀<br>링크 <span class="font-normal text-gray-500">(텍스트 항목은 생략)</span></p>
+                <div class="mt-2 pt-2 border-t border-blue-200 text-gray-500 font-mono text-[11px] leading-tight">
+                    [영상/이미지 예시]<br>
+                    귀여운 강아지<br>
+                    https://x.com/123<br><br>
+                    [텍스트 항목 예시]<br>
+                    순수 텍스트 떡밥
+                </div>
+            </div>
+            <textarea id="admin-bulk-text" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm whitespace-pre flex-wrap" placeholder="여기에 텍스트를 붙여넣으세요..."></textarea>
+            <div class="flex gap-2 mt-6">
+                <button onclick="window.closeAdminBulkModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">취소</button>
+                <button onclick="window.processAdminBulk()" class="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl">일괄 추가</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -111,7 +183,48 @@
         let isTransitioning = false;
         let isDbLoaded = false;
         
+        let editingCup = null; 
+        
         let db, auth, cupsCollectionRef;
+
+        // --- Custom UI Alert / Confirm Functions ---
+        window.showAlert = function(msg) {
+            document.getElementById('custom-alert-message').innerText = msg;
+            const modal = document.getElementById('custom-alert-modal');
+            const content = document.getElementById('custom-alert-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.replace('opacity-0', 'opacity-100'), 10);
+        };
+
+        window.closeCustomAlert = function() {
+            const modal = document.getElementById('custom-alert-modal');
+            const content = document.getElementById('custom-alert-content');
+            content.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        let confirmCallback = null;
+        window.showConfirm = function(msg, callback) {
+            document.getElementById('custom-confirm-message').innerText = msg;
+            confirmCallback = callback;
+            
+            const modal = document.getElementById('custom-confirm-modal');
+            const content = document.getElementById('custom-confirm-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.replace('opacity-0', 'opacity-100'), 10);
+        };
+
+        window.closeCustomConfirm = function(result) {
+            const modal = document.getElementById('custom-confirm-modal');
+            const content = document.getElementById('custom-confirm-content');
+            content.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (confirmCallback) confirmCallback(result);
+                confirmCallback = null;
+            }, 300);
+        };
+
 
         // --- Firebase Init ---
         async function initFirebase() {
@@ -129,16 +242,28 @@
                             loadedCups.sort((a, b) => a.id - b.id);
                             WORLD_CUPS = loadedCups;
                             isDbLoaded = true;
-                            window.render();
+                            if (currentView !== 'admin-edit') {
+                                window.render();
+                            }
+                        }, (error) => {
+                            console.error("Firestore Snapshot Error:", error);
+                            window.showAlert("데이터를 불러오지 못했습니다. 파이어베이스 규칙을 확인해주세요.");
                         });
                     }
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Firebase Init Error:", e); }
         }
 
         async function saveCupToDb(cup) {
-            if (!db || !auth.currentUser) return;
-            await setDoc(doc(cupsCollectionRef, cup.id.toString()), cup);
+            if (!db || !auth.currentUser) {
+                throw new Error("파이어베이스가 연결되지 않았습니다.");
+            }
+            try {
+                await setDoc(doc(cupsCollectionRef, cup.id.toString()), cup);
+            } catch (error) {
+                console.error("Firebase Save Error:", error);
+                throw new Error("저장 실패: 권한이 없거나 파이어베이스 보안 규칙(Rules)이 막혀있습니다.");
+            }
         }
 
         // --- Core Functions ---
@@ -146,6 +271,7 @@
             if (!isDbLoaded) return; 
             const mainHeader = document.getElementById('main-header');
             const headerTitle = document.getElementById('header-title');
+            
             if (currentView === 'home') {
                 mainHeader.style.display = 'none';
                 window.renderHome();
@@ -159,8 +285,12 @@
                 window.renderResult();
             } else if (currentView === 'admin') {
                 mainHeader.style.display = 'block';
-                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">관리자 모드</span>`;
+                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">월드컵 관리자</span>`;
                 window.renderAdmin();
+            } else if (currentView === 'admin-edit') {
+                mainHeader.style.display = 'block';
+                headerTitle.innerHTML = `<span class="text-base font-bold text-gray-800">월드컵 수정/추가</span>`;
+                window.renderAdminEdit();
             }
         };
 
@@ -229,13 +359,39 @@
             setTimeout(() => document.getElementById('ranking-modal').classList.add('hidden'), 300);
         };
 
+        // 랭킹에서 항목 눌렀을 때 (텍스트 월드컵 지원)
         window.showItemPreview = function(cupId, itemId) {
             const cup = WORLD_CUPS.find(c => c.id === cupId);
             const item = cup.items.find(i => i.id === itemId);
-            if(item.mediaUrl) {
+            if (!item.sourceUrl && !item.mediaUrl) {
+                window.showAlert(`[텍스트 떡밥]\n\n${item.name}`);
+            } else if (item.mediaUrl) {
                 window.showFullMedia(item.mediaUrl, item.isVideo);
             } else {
-                window.showAlert("이미지가 없는 항목입니다.");
+                window.showAlert("이미지가 로드되지 않았습니다.");
+            }
+        };
+
+        // 게임 도중 카드 눌렀을 때 (텍스트 월드컵 지원)
+        window.showGameMedia = function(itemId) {
+            const item = roundItems.find(i => i.id === itemId);
+            if(!item) return;
+            if (!item.sourceUrl && !item.mediaUrl) {
+                window.showAlert(`[텍스트 떡밥]\n\n${item.name}`);
+            } else if (item.mediaUrl) {
+                window.showFullMedia(item.mediaUrl, item.isVideo);
+            } else {
+                window.showAlert('미디어를 불러오는 중입니다...');
+            }
+        };
+
+        // 최종 결과화면 이미지 눌렀을 때 (텍스트 월드컵 지원)
+        window.showResultMedia = function() {
+            if (!winner) return;
+            if (!winner.sourceUrl && !winner.mediaUrl) {
+                window.showAlert(`[텍스트 떡밥]\n\n${winner.name}`);
+            } else if (winner.mediaUrl) {
+                window.showFullMedia(winner.mediaUrl, winner.isVideo);
             }
         };
 
@@ -253,8 +409,8 @@
                     </div>
                     <div class="relative flex justify-center items-center gap-3 mb-10 h-[35vh]">
                         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center font-black text-xs shadow-md border border-gray-100">VS</div>
-                        <div onclick="window.showFullMedia('${item1.mediaUrl}', ${item1.isVideo})" id="img-card-${item1.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item1)}</div>
-                        <div onclick="window.showFullMedia('${item2.mediaUrl}', ${item2.isVideo})" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item2)}</div>
+                        <div onclick="window.showGameMedia(${item1.id})" id="img-card-${item1.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item1)}</div>
+                        <div onclick="window.showGameMedia(${item2.id})" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-100 rounded-[24px] overflow-hidden cursor-pointer relative">${getMediaInnerHtml(item2)}</div>
                     </div>
                     <div class="flex flex-col gap-3 mt-auto">
                         <button onclick="window.handlePick(${item1.id})" id="btn-${item1.id}" class="select-transition w-full bg-white/80 rounded-[20px] p-5 text-left card-shadow border border-white flex justify-between">
@@ -287,13 +443,12 @@
                     if (nextRoundItems.length === 1) {
                         winner = nextRoundItems[0];
                         currentView = 'result';
-                        // --- 우승 카운트 업데이트 ---
                         const cupIdx = WORLD_CUPS.findIndex(c => c.id === selectedCup.id);
                         if(cupIdx > -1) {
                             const itemIdx = WORLD_CUPS[cupIdx].items.findIndex(i => i.id === winner.id);
                             if(itemIdx > -1) {
                                 WORLD_CUPS[cupIdx].items[itemIdx].winCount = (WORLD_CUPS[cupIdx].items[itemIdx].winCount || 0) + 1;
-                                await saveCupToDb(WORLD_CUPS[cupIdx]);
+                                try { await saveCupToDb(WORLD_CUPS[cupIdx]); } catch(e){} // 무음 처리
                             }
                         }
                     } else {
@@ -307,9 +462,15 @@
             }, 500);
         };
 
-        // --- Utils (기존 기능 유지) ---
+        // --- Utils ---
         function getMediaInnerHtml(item, isRes = false) {
-            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50"><i class="fa-solid fa-spinner fa-spin text-gray-200"></i></div>`;
+            // [추가] 링크가 아예 없는 경우 텍스트 월드컵용 디자인 표시
+            if (!item.sourceUrl && !item.mediaUrl) {
+                return `<div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-6 text-center">
+                            <span class="font-black text-[18px] sm:text-xl text-gray-800 break-keep leading-snug drop-shadow-sm">${item.name}</span>
+                        </div>`;
+            }
+            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-xs">미디어 로드중</div>`;
             if(item.isVideo) return `<video src="${item.mediaUrl}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>`;
             return `<img src="${item.mediaUrl}" class="absolute inset-0 w-full h-full object-cover" />`;
         }
@@ -317,6 +478,7 @@
         async function loadMediaIfNeeded(item, containerId) {
             if (item.mediaUrl) return;
             try {
+                if(!item.sourceUrl) return; // 텍스트 떡밥인 경우 패스
                 const urlObj = new URL(item.sourceUrl);
                 const res = await fetch(`https://api.vxtwitter.com${urlObj.pathname}`);
                 const data = await res.json();
@@ -326,7 +488,7 @@
                     const container = document.getElementById(containerId);
                     if (container) container.innerHTML = getMediaInnerHtml(item);
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Media load err", e); }
         }
 
         window.startCup = function(cupId, size) {
@@ -352,6 +514,7 @@
         window.closeBracketModal = function() { document.getElementById('bracket-modal').classList.add('hidden'); };
         
         window.showFullMedia = function(url, isV) {
+            if(!url || url === 'undefined') return window.showAlert('미디어 링크가 아직 로드되지 않았거나 존재하지 않습니다.');
             const content = document.getElementById('media-modal-content');
             content.innerHTML = isV ? `<video src="${url}" controls autoplay class="max-w-full max-h-[90vh] rounded-xl"></video>` : `<img src="${url}" class="max-w-full max-h-[90vh] rounded-xl" />`;
             document.getElementById('media-modal').classList.remove('hidden');
@@ -359,7 +522,7 @@
 
         window.closeFullMedia = function() { 
             document.getElementById('media-modal').classList.add('hidden'); 
-            document.getElementById('media-modal-content').innerHTML = ''; // 닫을 때 내부 콘텐츠를 지워서 영상 재생 중지
+            document.getElementById('media-modal-content').innerHTML = '';
         };
 
         window.goHome = function() { currentView = 'home'; window.render(); };
@@ -368,13 +531,331 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="px-5 pt-10 pb-12 fade-in text-center flex flex-col justify-center">
                     <div class="mb-4 inline-flex items-center space-x-1.5 bg-blue-50 text-blue-500 px-3 py-1.5 rounded-full font-bold text-sm mx-auto"><i class="fa-solid fa-crown"></i><span>최종 우승</span></div>
-                    <div class="w-full max-w-[280px] mx-auto aspect-square bg-gray-100 rounded-[32px] shadow-lg relative overflow-hidden mb-8">${getMediaInnerHtml(winner)}</div>
+                    <div onclick="window.showResultMedia()" class="w-full max-w-[280px] mx-auto aspect-square bg-gray-100 rounded-[32px] shadow-lg relative overflow-hidden mb-8 cursor-pointer">${getMediaInnerHtml(winner)}</div>
                     <h3 class="font-black text-xl text-gray-800 mb-1">${winner.name}</h3>
                     <div class="flex flex-col gap-3 mt-8">
                         <button onclick="window.showBracketModal(${selectedCup.id})" class="w-full py-4 bg-white text-gray-800 font-bold rounded-2xl border border-gray-100">다시 하기</button>
                         <button onclick="window.goHome()" class="w-full py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl">홈으로</button>
                     </div>
                 </div>`;
+        };
+
+        // --- 관리자 기능 ---
+        window.goAdmin = function() { currentView = 'admin'; window.render(); };
+
+        window.renderAdmin = function() {
+            const appContent = document.getElementById('app-content');
+            let html = `
+                <div class="px-5 pt-6 pb-12 fade-in">
+                    <button onclick="window.adminCreateCup()" class="w-full py-4 bg-blue-50 text-blue-500 border border-blue-100 border-dashed rounded-2xl font-bold mb-6 hover:bg-blue-100 transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> 새 월드컵 만들기
+                    </button>
+                    
+                    <h3 class="font-bold text-sm text-gray-500 mb-3">생성된 월드컵 목록</h3>
+                    <div class="flex flex-col gap-3">
+            `;
+
+            if(WORLD_CUPS.length === 0) {
+                html += `<p class="text-center text-gray-400 text-sm py-8">생성된 월드컵이 없습니다.</p>`;
+            }
+
+            WORLD_CUPS.forEach(cup => {
+                html += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="text-2xl">${cup.icon}</div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">${cup.title}</h4>
+                                <p class="text-[11px] text-gray-400">총 후보 ${cup.items.length}개</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.adminEditCup(${cup.id})" class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-100">수정</button>
+                            <button onclick="window.adminDeleteCup(${cup.id})" class="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-bold hover:bg-red-100">삭제</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            appContent.innerHTML = html;
+        };
+
+        window.adminCreateCup = function() {
+            editingCup = {
+                id: Date.now(),
+                title: '새로운 혚쾌 월드컵',
+                icon: '🏆',
+                items: []
+            };
+            currentView = 'admin-edit';
+            window.render();
+        };
+
+        window.adminEditCup = function(cupId) {
+            const originalCup = WORLD_CUPS.find(c => c.id === cupId);
+            if(!originalCup) return;
+            editingCup = JSON.parse(JSON.stringify(originalCup));
+            currentView = 'admin-edit';
+            window.render();
+        };
+
+        // 월드컵 전체 삭제
+        window.adminDeleteCup = async function(cupId) {
+            window.showConfirm('정말로 이 월드컵을 삭제하시겠습니까?\n내부의 모든 데이터가 영구적으로 사라집니다.', async (agreed) => {
+                if(!agreed) return;
+                try {
+                    await deleteDoc(doc(cupsCollectionRef, cupId.toString()));
+                    WORLD_CUPS = WORLD_CUPS.filter(c => c.id !== cupId);
+                    window.renderAdmin();
+                    window.showAlert('월드컵이 성공적으로 삭제되었습니다.');
+                } catch (e) {
+                    console.error(e);
+                    window.showAlert('삭제 실패: 파이어베이스 규칙(Rules)을 확인해주세요.');
+                }
+            });
+        };
+
+        window.adminToggleSelectAll = function() {
+            const isChecked = document.getElementById('selectAll').checked;
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+        };
+
+        // 개별 떡밥 삭제
+        window.adminDeleteItem = function(itemId) {
+            window.showConfirm('이 후보를 삭제하시겠습니까?', async (agreed) => {
+                if(!agreed) return;
+                editingCup.items = editingCup.items.filter(i => i.id !== itemId);
+                window.renderAdminEdit();
+                
+                try { 
+                    await saveCupToDb(editingCup); 
+                } catch(e) {
+                    window.showAlert(e.message);
+                }
+            });
+        };
+
+        // 선택 삭제
+        window.adminDeleteSelected = function() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            if (checkboxes.length === 0) {
+                return window.showAlert('삭제할 항목을 하나 이상 체크해주세요.');
+            }
+            
+            window.showConfirm(`선택한 ${checkboxes.length}개의 항목을 삭제하시겠습니까?`, async (agreed) => {
+                if(!agreed) return;
+                const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
+                editingCup.items = editingCup.items.filter(item => !idsToDelete.includes(item.id));
+                window.renderAdminEdit();
+                
+                try { 
+                    await saveCupToDb(editingCup); 
+                } catch(e) {
+                    window.showAlert(e.message);
+                }
+            });
+        };
+
+        window.renderAdminEdit = function() {
+            const appContent = document.getElementById('app-content');
+            let itemsHtml = '';
+            
+            editingCup.items.forEach(item => {
+                const isTextOnly = !item.sourceUrl && !item.mediaUrl;
+                let thumbHtml = '';
+                
+                if (isTextOnly) {
+                    thumbHtml = `<div class="flex items-center justify-center h-full w-full text-lg font-black text-blue-500 bg-blue-50">T</div>`;
+                } else if (item.mediaUrl) {
+                    thumbHtml = item.isVideo ? `<video src="${item.mediaUrl}" class="w-full h-full object-cover"></video>` : `<img src="${item.mediaUrl}" class="w-full h-full object-cover">`;
+                } else {
+                    thumbHtml = `<div class="flex items-center justify-center h-full w-full text-[10px] text-gray-400 bg-gray-100">로드중</div>`;
+                }
+
+                itemsHtml += `
+                    <div class="flex items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm gap-3 cursor-pointer" onclick="document.getElementById('chk-${item.id}').click()">
+                        <input type="checkbox" id="chk-${item.id}" value="${item.id}" class="item-checkbox w-4 h-4" onclick="event.stopPropagation()">
+                        <div class="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden relative border border-gray-100">
+                            ${thumbHtml}
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <p class="text-sm font-bold text-gray-800 truncate">${item.name}</p>
+                            <p class="text-[10px] text-gray-400 truncate">${item.sourceUrl || item.mediaUrl || '텍스트 항목'}</p>
+                        </div>
+                        <div class="flex gap-1 flex-shrink-0">
+                            <button onclick="event.stopPropagation(); window.adminShowItemModal(${item.id})" class="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); window.adminDeleteItem(${item.id})" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (editingCup.items.length === 0) {
+                itemsHtml = `<p class="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-200 rounded-xl">등록된 떡밥이 없습니다.<br>추가 버튼을 눌러주세요.</p>`;
+            }
+
+            appContent.innerHTML = `
+                <div class="px-5 pt-6 pb-12 fade-in">
+                    <div class="flex items-center justify-between mb-6">
+                        <button onclick="window.goAdmin()" class="text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> 목록으로</button>
+                        <button onclick="window.adminSaveCup()" class="bg-blue-500 text-white px-5 py-2 rounded-full font-bold text-sm shadow-md">저장 및 배포</button>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl p-4 shadow-sm mb-6 border border-gray-100">
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 mb-1">월드컵 제목</label>
+                            <input type="text" id="edit-cup-title" value="${editingCup.title}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">아이콘 (이모지 1개)</label>
+                            <input type="text" id="edit-cup-icon" value="${editingCup.icon}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="selectAll" onclick="window.adminToggleSelectAll()" class="w-4 h-4 ml-1 cursor-pointer">
+                            <h3 class="font-bold text-gray-800">후보 <span class="text-blue-500 font-black">${editingCup.items.length}</span></h3>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick="window.adminDeleteSelected()" class="text-[11px] bg-red-50 text-red-500 px-2 py-1.5 rounded-lg font-bold hover:bg-red-100 border border-red-100">선택삭제</button>
+                            <button onclick="window.adminShowBulkModal()" class="text-[11px] bg-gray-100 text-gray-600 px-2 py-1.5 rounded-lg font-bold hover:bg-gray-200">대량추가</button>
+                            <button onclick="window.adminShowItemModal()" class="text-[11px] bg-blue-50 text-blue-500 px-2 py-1.5 rounded-lg font-bold hover:bg-blue-100">추가</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+        };
+
+        window.adminSaveCup = async function() {
+            const title = document.getElementById('edit-cup-title').value.trim();
+            const icon = document.getElementById('edit-cup-icon').value.trim();
+            
+            if(!title) return window.showAlert('월드컵 제목을 입력해주세요.');
+            
+            editingCup.title = title;
+            editingCup.icon = icon || '🏆';
+            
+            try {
+                await saveCupToDb(editingCup);
+                window.showAlert('성공적으로 저장 및 배포되었습니다!');
+                window.goAdmin();
+            } catch (e) {
+                window.showAlert(e.message);
+            }
+        };
+
+        window.adminShowItemModal = function(itemId = null) {
+            const modal = document.getElementById('admin-item-modal');
+            modal.classList.remove('hidden');
+            
+            if (itemId) {
+                document.getElementById('admin-item-modal-title').innerText = '항목 수정';
+                const item = editingCup.items.find(i => i.id === itemId);
+                document.getElementById('admin-item-id').value = item.id;
+                document.getElementById('admin-item-name').value = item.name || '';
+                document.getElementById('admin-item-date').value = item.date || '';
+                document.getElementById('admin-item-source').value = item.sourceUrl || '';
+                document.getElementById('admin-item-media').value = item.mediaUrl || '';
+            } else {
+                document.getElementById('admin-item-modal-title').innerText = '새 항목 추가';
+                document.getElementById('admin-item-id').value = '';
+                document.getElementById('admin-item-name').value = '';
+                document.getElementById('admin-item-date').value = '';
+                document.getElementById('admin-item-source').value = '';
+                document.getElementById('admin-item-media').value = '';
+            }
+        };
+
+        window.closeAdminItemModal = function() { document.getElementById('admin-item-modal').classList.add('hidden'); };
+
+        window.saveAdminItem = async function() {
+            const id = document.getElementById('admin-item-id').value;
+            const name = document.getElementById('admin-item-name').value.trim();
+            const date = document.getElementById('admin-item-date').value.trim();
+            const sourceUrl = document.getElementById('admin-item-source').value.trim();
+            const mediaUrl = document.getElementById('admin-item-media').value.trim();
+
+            if (!name) return window.showAlert('후보 이름을 입력해주세요.');
+
+            const itemData = {
+                id: id ? parseInt(id) : Date.now(),
+                name, date, sourceUrl, mediaUrl,
+                isVideo: mediaUrl ? mediaUrl.endsWith('.mp4') : false,
+                winCount: id ? (editingCup.items.find(i => i.id == parseInt(id))?.winCount || 0) : 0
+            };
+
+            if (id) {
+                const idx = editingCup.items.findIndex(i => i.id === parseInt(id));
+                if(idx > -1) editingCup.items[idx] = itemData;
+            } else {
+                editingCup.items.push(itemData);
+            }
+
+            window.closeAdminItemModal();
+            window.renderAdminEdit();
+            
+            try { 
+                await saveCupToDb(editingCup); 
+            } catch(e) {
+                window.showAlert(e.message);
+            }
+        };
+
+        window.adminShowBulkModal = function() {
+            document.getElementById('admin-bulk-text').value = '';
+            document.getElementById('admin-bulk-modal').classList.remove('hidden');
+        };
+
+        window.closeAdminBulkModal = function() { document.getElementById('admin-bulk-modal').classList.add('hidden'); };
+
+        window.processAdminBulk = async function() {
+            const text = document.getElementById('admin-bulk-text').value.trim();
+            if (!text) {
+                return window.showAlert('입력된 텍스트가 없습니다.');
+            }
+
+            const blocks = text.split(/\n\s*\n/);
+            let addedCount = 0;
+            
+            blocks.forEach((block, index) => {
+                const lines = block.split('\n').map(line => line.trim()).filter(line => line !== '');
+                
+                if (lines.length >= 1) {
+                    const title = lines[0]; 
+                    const link = lines[1] || ''; 
+                    
+                    editingCup.items.push({
+                        id: Date.now() + index,
+                        name: title,
+                        date: '',
+                        sourceUrl: link, // 링크가 없으면 빈 칸이 들어감 = 텍스트 월드컵으로 처리
+                        mediaUrl: '',
+                        isVideo: false,
+                        winCount: 0
+                    });
+                    addedCount++;
+                }
+            });
+
+            if(addedCount > 0) {
+                window.closeAdminBulkModal();
+                window.renderAdminEdit();
+                try { 
+                    await saveCupToDb(editingCup); 
+                    window.showAlert(`${addedCount}개의 항목이 추가되고 저장되었습니다.`);
+                } catch(e) {
+                    window.showAlert(e.message);
+                }
+            } else {
+                window.showAlert('추가된 항목이 없습니다.\n입력 형식을 다시 확인해주세요.');
+            }
         };
 
         initFirebase();
