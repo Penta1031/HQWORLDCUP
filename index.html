@@ -360,7 +360,13 @@
 
         window.renderHome = function() {
             const appContent = document.getElementById('app-content');
-            let html = `<div class="px-4 pt-8 pb-10 fade-in">
+            let html = `
+            <div class="px-4 pt-6 pb-2 fade-in">
+                <a href="https://hq-record.netlify.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-1.5 text-[11px]"></i> 메인으로
+                </a>
+            </div>
+            <div class="px-4 pt-4 pb-10 fade-in">
                 <div class="text-center mb-8 mt-2"><h2 class="text-[22px] font-black tracking-tight text-gray-900 drop-shadow-sm">혚쾌 월드컵</h2></div>
                 <div class="flex flex-col gap-3">`;
 
@@ -860,5 +866,4 @@
     </script>
 </body>
 </html>
-
 
