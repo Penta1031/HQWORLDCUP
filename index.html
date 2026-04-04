@@ -57,6 +57,24 @@
         </div>
     </main>
 
+    <!-- 이용 가이드 모달 -->
+    <div id="guide-modal" class="fixed inset-0 bg-black/50 z-[400] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-[300px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="guide-content">
+            <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h3 class="font-black text-gray-900 mb-3 text-[16px]">이용 가이드</h3>
+            <div class="text-left space-y-3 text-[13px] text-gray-600 leading-relaxed mb-6">
+                <p>1. 원하는 테마의 월드컵을 선택하세요.</p>
+                <p>2. 진행할 강수(라운드)를 선택합니다. 데이터 개수가 많으면 <b>부전승</b>이 발생할 수 있습니다.</p>
+                <p>3. 두 후보 중 더 마음에 드는 쪽을 클릭하세요.</p>
+                <p>4. 최종 우승을 차지한 떡밥은 랭킹에 반영됩니다.</p>
+                <p>5. 상단 <b>'메인으로'</b>를 통해 언제든 레코드로 돌아갈 수 있습니다.</p>
+            </div>
+            <button onclick="window.closeGuide()" class="w-full py-3 bg-blue-500 text-white font-bold rounded-xl text-[13px]">확인했어요</button>
+        </div>
+    </div>
+
     <!-- 자체 제작 알림창 (Alert) -->
     <div id="custom-alert-modal" class="fixed inset-0 bg-black/50 z-[300] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-alert-content">
@@ -106,7 +124,7 @@
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl transform scale-95 opacity-0 transition-all duration-200" id="bracket-modal-content">
             <div class="text-center mb-5">
                 <h3 class="text-[16px] font-bold text-gray-900 mb-1 truncate" id="bracket-modal-title">월드컵 제목</h3>
-                <p class="text-xs text-gray-400">몇 강으로 진행할까요?</p>
+                <p class="text-xs text-gray-400">진행할 강수를 선택하세요.</p>
             </div>
             <div class="grid grid-cols-2 gap-2" id="bracket-options"></div>
             <button onclick="window.closeBracketModal()" class="mt-4 w-full py-2.5 bg-gray-50 text-gray-500 font-bold rounded-xl hover:bg-gray-100 transition-colors text-[13px]">취소</button>
@@ -238,6 +256,20 @@
             }, 200);
         };
 
+        // 가이드 모달
+        window.openGuide = function() {
+            const modal = document.getElementById('guide-modal');
+            const content = document.getElementById('guide-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.replace('opacity-0', 'opacity-100'), 10);
+        };
+        window.closeGuide = function() {
+            const modal = document.getElementById('guide-modal');
+            const content = document.getElementById('guide-content');
+            content.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        };
+
         // 관리자용 패스워드 모달
         window.goAdmin = function() { 
             document.getElementById('admin-password-input').value = '';
@@ -269,7 +301,6 @@
             }, 200);
         };
 
-        // 엔터키로 패스워드 폼 제출 가능하게 처리
         document.getElementById('admin-password-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 window.closeCustomPrompt(true);
@@ -361,10 +392,13 @@
         window.renderHome = function() {
             const appContent = document.getElementById('app-content');
             let html = `
-            <div class="px-4 pt-6 pb-2 fade-in">
-                <a href="https://hq-record.vercel.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600 transition-colors">
+            <div class="px-4 pt-6 pb-2 fade-in flex justify-between items-center">
+                <a href="https://hq-record.netlify.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-1.5 text-[11px]"></i> 메인으로
                 </a>
+                <button onclick="window.openGuide()" class="text-gray-400 font-medium text-[12px] hover:text-blue-500 transition-colors">
+                    <i class="fa-solid fa-circle-question mr-1"></i> 가이드
+                </button>
             </div>
             <div class="px-4 pt-4 pb-10 fade-in">
                 <div class="text-center mb-8 mt-2"><h2 class="text-[22px] font-black tracking-tight text-gray-900 drop-shadow-sm">혚쾌 월드컵</h2></div>
@@ -435,12 +469,24 @@
             setTimeout(() => document.getElementById('ranking-modal').classList.add('hidden'), 300);
         };
 
-        window.showItemPreview = function(cupId, itemId) {
+        window.showItemPreview = async function(cupId, itemId) {
             const cup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
             const item = cup.items.find(i => i.id == itemId);
-            if (!item.sourceUrl && !item.mediaUrl) window.showAlert(`[텍스트]\n\n${item.name}`);
-            else if (item.mediaUrl) window.showFullMedia(item.mediaUrl, item.isVideo);
-            else window.showAlert("로딩중...");
+            if (!item.sourceUrl && !item.mediaUrl) {
+                window.showAlert(`[텍스트]\n\n${item.name}`);
+                return;
+            }
+            
+            // 미디어가 없으면 패치 시도
+            if (!item.mediaUrl && item.sourceUrl) {
+                await loadMediaIfNeeded(item);
+            }
+            
+            if (item.mediaUrl) {
+                window.showFullMedia(item.mediaUrl, item.isVideo);
+            } else if (item.sourceUrl) {
+                 window.showAlert('미디어 정보를 불러오지 못했습니다. 링크를 직접 확인해주세요.');
+            }
         };
 
         window.showGameMedia = function(itemId) {
@@ -460,13 +506,42 @@
         window.renderGame = function() {
             const appContent = document.getElementById('app-content');
             if (!selectedCup || roundItems.length === 0) return;
-            const currentRound = roundItems.length === 2 ? '결승전' : `${roundItems.length}강`;
+            
+            const totalInRound = roundItems.length;
+            const currentRoundTitle = totalInRound === 2 ? '결승전' : `${totalInRound}강`;
+            
+            // 부전승 처리 (홀수 개수일 때 마지막 항목 자동 진출)
+            if (matchIndex >= totalInRound) {
+                 // 라운드 종료 처리
+                 roundItems = [...nextRoundItems];
+                 nextRoundItems = [];
+                 matchIndex = 0;
+                 window.render();
+                 return;
+            }
+
+            // 부전승 상황 체크
+            if (matchIndex === totalInRound - 1) {
+                const byeItem = roundItems[matchIndex];
+                appContent.innerHTML = `
+                    <div class="px-4 pt-10 pb-6 fade-in h-full flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mb-6 text-2xl shadow-sm">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h2 class="text-xl font-black text-gray-900 mb-2">부전승 발생!</h2>
+                        <p class="text-gray-400 text-[13px] mb-8 leading-relaxed">대진 인원이 홀수여서<br><b>${byeItem.name}</b>이(가) 다음 라운드로 진출합니다.</p>
+                        <button onclick="window.handleBye('${byeItem.id}')" class="w-full max-w-[200px] py-4 bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-200">다음 라운드 이동</button>
+                    </div>
+                `;
+                return;
+            }
+
             const item1 = roundItems[matchIndex], item2 = roundItems[matchIndex + 1];
 
             appContent.innerHTML = `
                 <div class="px-4 pt-4 pb-6 fade-in h-full flex flex-col">
                     <div class="text-center mb-6">
-                        <p class="text-gray-400 text-[12px] font-bold">${currentRound} ${Math.floor(matchIndex/2)+1}/${roundItems.length/2}</p>
+                        <p class="text-gray-400 text-[12px] font-bold">${currentRoundTitle} ${Math.floor(matchIndex/2)+1}/${Math.ceil(totalInRound/2)}</p>
                     </div>
                     <div class="relative flex justify-center items-center gap-2.5 mb-8 h-[30vh]">
                         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white rounded-full flex items-center justify-center font-black text-[10px] text-gray-500 shadow-sm border border-gray-100">VS</div>
@@ -486,6 +561,20 @@
                 </div>`;
             loadMediaIfNeeded(item1, `img-card-${item1.id}`);
             loadMediaIfNeeded(item2, `img-card-${item2.id}`);
+        };
+
+        window.handleBye = function(itemId) {
+            const sel = roundItems.find(i => i.id == itemId);
+            nextRoundItems.push(sel);
+            matchIndex += 1;
+            
+            // 라운드 종료 여부 체크
+            if (matchIndex >= roundItems.length) {
+                roundItems = [...nextRoundItems];
+                nextRoundItems = [];
+                matchIndex = 0;
+            }
+            window.render();
         };
 
         window.handlePick = async function(itemId) {
@@ -531,12 +620,12 @@
                             <span class="font-black text-[15px] text-gray-700 break-keep leading-snug drop-shadow-sm">${item.name}</span>
                         </div>`;
             }
-            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-[10px]">로딩중</div>`;
+            if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-[10px]"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>로딩중</div>`;
             if(item.isVideo) return `<video src="${item.mediaUrl}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>`;
             return `<img src="${item.mediaUrl}" class="absolute inset-0 w-full h-full object-cover" />`;
         }
 
-        async function loadMediaIfNeeded(item, containerId) {
+        async function loadMediaIfNeeded(item, containerId = null) {
             if (item.mediaUrl || !item.sourceUrl) return;
             try {
                 const urlObj = new URL(item.sourceUrl);
@@ -545,8 +634,10 @@
                 if (data.mediaURLs?.length > 0) {
                     item.mediaUrl = data.mediaURLs[0];
                     item.isVideo = item.mediaUrl.endsWith('.mp4');
-                    const container = document.getElementById(containerId);
-                    if (container) container.innerHTML = getMediaInnerHtml(item);
+                    if (containerId) {
+                        const container = document.getElementById(containerId);
+                        if (container) container.innerHTML = getMediaInnerHtml(item);
+                    }
                 }
             } catch (e) {}
         }
@@ -554,18 +645,30 @@
         window.startCup = function(cupId, size) {
             window.closeBracketModal();
             selectedCup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
-            roundItems = [...selectedCup.items].sort(() => Math.random() - 0.5).slice(0, size);
-            nextRoundItems = []; matchIndex = 0; currentView = 'game';
+            const allItems = [...selectedCup.items].sort(() => Math.random() - 0.5);
+            
+            // 지정된 개수만큼 자르기
+            roundItems = allItems.slice(0, size);
+            nextRoundItems = []; 
+            matchIndex = 0; 
+            currentView = 'game';
             window.render();
         };
 
         window.showBracketModal = function(id) {
             const cup = id === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == id);
             document.getElementById('bracket-modal-title').innerText = cup.title;
+            const count = cup.items.length;
+            
             let opts = '';
-            [128, 64, 32, 16, 8, 4].filter(s => s <= cup.items.length).forEach(s => {
-                opts += `<button onclick="window.startCup('${id}', ${s})" class="py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl text-[13px]">${s}강</button>`;
+            // 전체 데이터 기준으로 무조건 할 수 있는 옵션 추가
+            opts += `<button onclick="window.startCup('${id}', ${count})" class="py-3 bg-blue-500 text-white font-bold rounded-xl text-[13px]">전체 (${count}강)</button>`;
+            
+            // 표준 강수들 추가
+            [128, 64, 32, 16, 8, 4].filter(s => s < count).forEach(s => {
+                opts += `<button onclick="window.startCup('${id}', ${s})" class="py-3 bg-blue-50 text-blue-600 font-bold rounded-xl text-[13px]">${s}강</button>`;
             });
+            
             document.getElementById('bracket-options').innerHTML = opts;
             document.getElementById('bracket-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('bracket-modal-content').classList.replace('opacity-0', 'opacity-100'), 10);
@@ -866,4 +969,3 @@
     </script>
 </body>
 </html>
-
