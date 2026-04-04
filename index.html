@@ -68,8 +68,9 @@
                 <p>1. 원하는 테마의 월드컵을 선택하세요.</p>
                 <p>2. 진행할 강수(라운드)를 선택합니다. 데이터 개수가 많으면 <b>부전승</b>이 발생할 수 있습니다.</p>
                 <p>3. 두 후보 중 더 마음에 드는 쪽을 클릭하세요.</p>
-                <p>4. 최종 우승을 차지한 떡밥은 랭킹에 반영됩니다.</p>
-                <p>5. 상단 <b>'메인으로'</b>를 통해 언제든 레코드로 돌아갈 수 있습니다.</p>
+                <p>4. <b>이미지를 클릭</b>하면 떡밥을 더 크게 확인할 수 있습니다.</p>
+                <p>5. 최종 우승을 차지한 떡밥은 랭킹에 반영됩니다.</p>
+                <p>6. 상단 <b>'메인으로'</b>를 통해 언제든 레코드로 돌아갈 수 있습니다.</p>
             </div>
             <button onclick="window.closeGuide()" class="w-full py-3 bg-blue-500 text-white font-bold rounded-xl text-[13px]">확인했어요</button>
         </div>
@@ -510,9 +511,8 @@
             const totalInRound = roundItems.length;
             const currentRoundTitle = totalInRound === 2 ? '결승전' : `${totalInRound}강`;
             
-            // 부전승 처리 (홀수 개수일 때 마지막 항목 자동 진출)
+            // 부전승 처리
             if (matchIndex >= totalInRound) {
-                 // 라운드 종료 처리
                  roundItems = [...nextRoundItems];
                  nextRoundItems = [];
                  matchIndex = 0;
@@ -520,7 +520,6 @@
                  return;
             }
 
-            // 부전승 상황 체크
             if (matchIndex === totalInRound - 1) {
                 const byeItem = roundItems[matchIndex];
                 appContent.innerHTML = `
@@ -542,6 +541,7 @@
                 <div class="px-4 pt-4 pb-6 fade-in h-full flex flex-col">
                     <div class="text-center mb-6">
                         <p class="text-gray-400 text-[12px] font-bold">${currentRoundTitle} ${Math.floor(matchIndex/2)+1}/${Math.ceil(totalInRound/2)}</p>
+                        <p class="text-[10px] text-gray-300 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>이미지를 클릭하면 크게 볼 수 있습니다</p>
                     </div>
                     <div class="relative flex justify-center items-center gap-2.5 mb-8 h-[30vh]">
                         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white rounded-full flex items-center justify-center font-black text-[10px] text-gray-500 shadow-sm border border-gray-100">VS</div>
@@ -568,7 +568,6 @@
             nextRoundItems.push(sel);
             matchIndex += 1;
             
-            // 라운드 종료 여부 체크
             if (matchIndex >= roundItems.length) {
                 roundItems = [...nextRoundItems];
                 nextRoundItems = [];
@@ -646,8 +645,6 @@
             window.closeBracketModal();
             selectedCup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
             const allItems = [...selectedCup.items].sort(() => Math.random() - 0.5);
-            
-            // 지정된 개수만큼 자르기
             roundItems = allItems.slice(0, size);
             nextRoundItems = []; 
             matchIndex = 0; 
@@ -661,10 +658,7 @@
             const count = cup.items.length;
             
             let opts = '';
-            // 전체 데이터 기준으로 무조건 할 수 있는 옵션 추가
             opts += `<button onclick="window.startCup('${id}', ${count})" class="py-3 bg-blue-500 text-white font-bold rounded-xl text-[13px]">전체 (${count}강)</button>`;
-            
-            // 표준 강수들 추가
             [128, 64, 32, 16, 8, 4].filter(s => s < count).forEach(s => {
                 opts += `<button onclick="window.startCup('${id}', ${s})" class="py-3 bg-blue-50 text-blue-600 font-bold rounded-xl text-[13px]">${s}강</button>`;
             });
@@ -703,7 +697,7 @@
                 </div>`;
         };
 
-        // --- 관리자 기능 ---
+        // --- 관리자 기능 생략 (동일) ---
         window.renderAdmin = function() {
             const appContent = document.getElementById('app-content');
             let html = `
@@ -711,13 +705,10 @@
                     <button onclick="window.adminCreateCup()" class="w-full py-3 bg-blue-50 text-blue-500 border border-blue-100 border-dashed rounded-xl font-bold mb-5 hover:bg-blue-100 transition-colors text-[13px]">
                         <i class="fa-solid fa-plus mr-1"></i> 새 월드컵 만들기
                     </button>
-                    
                     <h3 class="font-bold text-[11px] text-gray-400 mb-2 pl-1">생성된 월드컵 목록</h3>
                     <div class="flex flex-col gap-2">
             `;
-
             if(WORLD_CUPS.length === 0) html += `<p class="text-center text-gray-400 text-xs py-6">월드컵이 없습니다.</p>`;
-
             WORLD_CUPS.forEach(cup => {
                 html += `
                     <div class="bg-white p-3 rounded-[16px] shadow-sm border border-gray-100 flex items-center justify-between">
@@ -738,234 +729,35 @@
             html += `</div></div>`;
             appContent.innerHTML = html;
         };
-
-        window.adminCreateCup = function() {
-            editingCup = { id: Date.now(), title: '새로운 혚쾌 월드컵', icon: '🏆', items: [] };
-            currentView = 'admin-edit';
-            window.render();
-        };
-
-        window.adminEditCup = function(cupId) {
-            const originalCup = WORLD_CUPS.find(c => c.id == cupId);
-            if(!originalCup) return;
-            editingCup = JSON.parse(JSON.stringify(originalCup));
-            currentView = 'admin-edit';
-            window.render();
-        };
-
-        window.adminDeleteCup = async function(cupId) {
-            window.showConfirm('정말로 이 월드컵을 삭제하시겠습니까?', async (agreed) => {
-                if(!agreed) return;
-                try {
-                    await deleteDoc(doc(cupsCollectionRef, cupId.toString()));
-                    WORLD_CUPS = WORLD_CUPS.filter(c => c.id != cupId);
-                    window.renderAdmin();
-                    window.showAlert('삭제되었습니다.');
-                } catch (e) { window.showAlert('삭제 실패: 권한 부족'); }
-            });
-        };
-
-        window.adminToggleSelectAll = function() {
-            const isChecked = document.getElementById('selectAll').checked;
-            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = isChecked);
-        };
-
-        window.adminDeleteItem = function(itemId) {
-            window.showConfirm('이 후보를 삭제하시겠습니까?', async (agreed) => {
-                if(!agreed) return;
-                editingCup.items = editingCup.items.filter(i => i.id != itemId);
-                window.renderAdminEdit();
-                try { await saveCupToDb(editingCup); } catch(e) {}
-            });
-        };
-
-        window.adminDeleteSelected = function() {
-            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
-            if (checkboxes.length === 0) return window.showAlert('항목을 선택해주세요.');
-            window.showConfirm(`${checkboxes.length}개를 삭제하시겠습니까?`, async (agreed) => {
-                if(!agreed) return;
-                const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
-                editingCup.items = editingCup.items.filter(item => !ids.includes(item.id));
-                window.renderAdminEdit();
-                try { await saveCupToDb(editingCup); } catch(e) {}
-            });
-        };
-
+        window.adminCreateCup = function() { editingCup = { id: Date.now(), title: '새로운 혚쾌 월드컵', icon: '🏆', items: [] }; currentView = 'admin-edit'; window.render(); };
+        window.adminEditCup = function(cupId) { const originalCup = WORLD_CUPS.find(c => c.id == cupId); if(!originalCup) return; editingCup = JSON.parse(JSON.stringify(originalCup)); currentView = 'admin-edit'; window.render(); };
+        window.adminDeleteCup = async function(cupId) { window.showConfirm('정말로 이 월드컵을 삭제하시겠습니까?', async (agreed) => { if(!agreed) return; try { await deleteDoc(doc(cupsCollectionRef, cupId.toString())); WORLD_CUPS = WORLD_CUPS.filter(c => c.id != cupId); window.renderAdmin(); window.showAlert('삭제되었습니다.'); } catch (e) { window.showAlert('삭제 실패: 권한 부족'); } }); };
+        window.adminToggleSelectAll = function() { const isChecked = document.getElementById('selectAll').checked; document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = isChecked); };
+        window.adminDeleteItem = function(itemId) { window.showConfirm('이 후보를 삭제하시겠습니까?', async (agreed) => { if(!agreed) return; editingCup.items = editingCup.items.filter(i => i.id != itemId); window.renderAdminEdit(); try { await saveCupToDb(editingCup); } catch(e) {} }); };
+        window.adminDeleteSelected = function() { const checkboxes = document.querySelectorAll('.item-checkbox:checked'); if (checkboxes.length === 0) return window.showAlert('항목을 선택해주세요.'); window.showConfirm(`${checkboxes.length}개를 삭제하시겠습니까?`, async (agreed) => { if(!agreed) return; const ids = Array.from(checkboxes).map(cb => parseInt(cb.value)); editingCup.items = editingCup.items.filter(item => !ids.includes(item.id)); window.renderAdminEdit(); try { await saveCupToDb(editingCup); } catch(e) {} }); };
         window.renderAdminEdit = function() {
             const appContent = document.getElementById('app-content');
             let itemsHtml = '';
-            
             editingCup.items.forEach(item => {
                 const isTextOnly = !item.sourceUrl && !item.mediaUrl;
                 let thumbHtml = isTextOnly ? `<div class="flex items-center justify-center h-full w-full text-[13px] font-black text-blue-400 bg-blue-50/50">T</div>` 
                                   : (item.mediaUrl ? (item.isVideo ? `<video src="${item.mediaUrl}" class="w-full h-full object-cover"></video>` : `<img src="${item.mediaUrl}" class="w-full h-full object-cover">`) 
                                   : `<div class="flex items-center justify-center h-full w-full text-[8px] text-gray-400 bg-gray-50">.</div>`);
-
-                itemsHtml += `
-                    <div class="flex items-center bg-white p-2.5 rounded-[14px] border border-gray-100 shadow-sm gap-2.5 cursor-pointer" onclick="document.getElementById('chk-${item.id}').click()">
-                        <input type="checkbox" id="chk-${item.id}" value="${item.id}" class="item-checkbox w-3.5 h-3.5" onclick="event.stopPropagation()">
-                        <div class="w-9 h-9 rounded-[10px] flex-shrink-0 overflow-hidden relative border border-gray-100">
-                            ${thumbHtml}
-                        </div>
-                        <div class="flex-grow min-w-0">
-                            <p class="text-[13px] font-bold text-gray-800 truncate leading-tight">${item.name}</p>
-                            <p class="text-[9px] text-gray-400 truncate mt-0.5">${item.sourceUrl || item.mediaUrl || '텍스트 항목'}</p>
-                        </div>
-                        <div class="flex gap-1 flex-shrink-0">
-                            <button onclick="event.stopPropagation(); window.adminShowItemModal(${item.id})" class="w-7 h-7 flex items-center justify-center bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                            <button onclick="event.stopPropagation(); window.adminDeleteItem(${item.id})" class="w-7 h-7 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i class="fa-solid fa-trash text-[10px]"></i></button>
-                        </div>
-                    </div>
-                `;
+                itemsHtml += `<div class="flex items-center bg-white p-2.5 rounded-[14px] border border-gray-100 shadow-sm gap-2.5 cursor-pointer" onclick="document.getElementById('chk-${item.id}').click()"><input type="checkbox" id="chk-${item.id}" value="${item.id}" class="item-checkbox w-3.5 h-3.5" onclick="event.stopPropagation()"><div class="w-9 h-9 rounded-[10px] flex-shrink-0 overflow-hidden relative border border-gray-100">${thumbHtml}</div><div class="flex-grow min-w-0"><p class="text-[13px] font-bold text-gray-800 truncate leading-tight">${item.name}</p><p class="text-[9px] text-gray-400 truncate mt-0.5">${item.sourceUrl || item.mediaUrl || '텍스트 항목'}</p></div><div class="flex gap-1 flex-shrink-0"><button onclick="event.stopPropagation(); window.adminShowItemModal(${item.id})" class="w-7 h-7 flex items-center justify-center bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-pen text-[10px]"></i></button><button onclick="event.stopPropagation(); window.adminDeleteItem(${item.id})" class="w-7 h-7 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><i class="fa-solid fa-trash text-[10px]"></i></button></div></div>`;
             });
-
-            if (editingCup.items.length === 0) {
-                itemsHtml = `<p class="text-center text-gray-400 text-xs py-8 border border-dashed border-gray-200 rounded-xl">등록된 떡밥이 없습니다.</p>`;
-            }
-
-            appContent.innerHTML = `
-                <div class="px-4 pt-4 pb-12 fade-in">
-                    <div class="flex items-center justify-between mb-4">
-                        <button onclick="window.goAdmin()" class="text-gray-500 font-bold text-[12px]"><i class="fa-solid fa-arrow-left"></i> 목록</button>
-                        <button onclick="window.adminSaveCup()" class="bg-blue-500 text-white px-4 py-1.5 rounded-full font-bold text-[12px] shadow-sm">저장 및 배포</button>
-                    </div>
-                    
-                    <div class="bg-white rounded-[16px] p-3.5 shadow-sm mb-5 border border-gray-100">
-                        <div class="mb-3">
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1">월드컵 제목</label>
-                            <input type="text" id="edit-cup-title" value="${editingCup.title}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] font-bold focus:outline-none focus:border-blue-300">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1">아이콘 (이모지 1개)</label>
-                            <input type="text" id="edit-cup-icon" value="${editingCup.icon}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] focus:outline-none focus:border-blue-300">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between mb-2.5">
-                        <div class="flex items-center gap-1.5">
-                            <input type="checkbox" id="selectAll" onclick="window.adminToggleSelectAll()" class="w-3.5 h-3.5 ml-1 cursor-pointer">
-                            <h3 class="font-bold text-gray-800 text-[12px]">후보 <span class="text-blue-500">${editingCup.items.length}</span></h3>
-                        </div>
-                        <div class="flex gap-1.5">
-                            <button onclick="window.adminDeleteSelected()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-md font-bold hover:bg-red-100">선택삭제</button>
-                            <button onclick="window.adminShowBulkModal()" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-bold hover:bg-gray-200">대량추가</button>
-                            <button onclick="window.adminShowItemModal()" class="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded-md font-bold hover:bg-blue-100">추가</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        ${itemsHtml}
-                    </div>
-                </div>
-            `;
+            if (editingCup.items.length === 0) itemsHtml = `<p class="text-center text-gray-400 text-xs py-8 border border-dashed border-gray-200 rounded-xl">등록된 떡밥이 없습니다.</p>`;
+            appContent.innerHTML = `<div class="px-4 pt-4 pb-12 fade-in"><div class="flex items-center justify-between mb-4"><button onclick="window.goAdmin()" class="text-gray-500 font-bold text-[12px]"><i class="fa-solid fa-arrow-left"></i> 목록</button><button onclick="window.adminSaveCup()" class="bg-blue-500 text-white px-4 py-1.5 rounded-full font-bold text-[12px] shadow-sm">저장 및 배포</button></div><div class="bg-white rounded-[16px] p-3.5 shadow-sm mb-5 border border-gray-100"><div class="mb-3"><label class="block text-[10px] font-bold text-gray-400 mb-1">월드컵 제목</label><input type="text" id="edit-cup-title" value="${editingCup.title}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] font-bold focus:outline-none focus:border-blue-300"></div><div><label class="block text-[10px] font-bold text-gray-400 mb-1">아이콘 (이모지 1개)</label><input type="text" id="edit-cup-icon" value="${editingCup.icon}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-[13px] focus:outline-none focus:border-blue-300"></div></div><div class="flex items-center justify-between mb-2.5"><div class="flex items-center gap-1.5"><input type="checkbox" id="selectAll" onclick="window.adminToggleSelectAll()" class="w-3.5 h-3.5 ml-1 cursor-pointer"><h3 class="font-bold text-gray-800 text-[12px]">후보 <span class="text-blue-500">${editingCup.items.length}</span></h3></div><div class="flex gap-1.5"><button onclick="window.adminDeleteSelected()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-md font-bold hover:bg-red-100">선택삭제</button><button onclick="window.adminShowBulkModal()" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-bold hover:bg-gray-200">대량추가</button><button onclick="window.adminShowItemModal()" class="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded-md font-bold hover:bg-blue-100">추가</button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
         };
-
-        window.adminSaveCup = async function() {
-            const title = document.getElementById('edit-cup-title').value.trim();
-            const icon = document.getElementById('edit-cup-icon').value.trim();
-            if(!title) return window.showAlert('월드컵 제목을 입력해주세요.');
-            
-            editingCup.title = title;
-            editingCup.icon = icon || '🏆';
-            
-            try {
-                await saveCupToDb(editingCup);
-                window.showAlert('저장되었습니다!');
-                window.goAdmin();
-            } catch (e) { window.showAlert(e.message); }
-        };
-
-        window.adminShowItemModal = function(itemId = null) {
-            document.getElementById('admin-item-modal').classList.remove('hidden');
-            if (itemId) {
-                document.getElementById('admin-item-modal-title').innerText = '항목 수정';
-                const item = editingCup.items.find(i => i.id == itemId);
-                document.getElementById('admin-item-id').value = item.id;
-                document.getElementById('admin-item-name').value = item.name || '';
-                document.getElementById('admin-item-date').value = item.date || '';
-                document.getElementById('admin-item-source').value = item.sourceUrl || '';
-                document.getElementById('admin-item-media').value = item.mediaUrl || '';
-            } else {
-                document.getElementById('admin-item-modal-title').innerText = '새 항목 추가';
-                document.getElementById('admin-item-id').value = '';
-                document.getElementById('admin-item-name').value = '';
-                document.getElementById('admin-item-date').value = '';
-                document.getElementById('admin-item-source').value = '';
-                document.getElementById('admin-item-media').value = '';
-            }
-        };
-
+        window.adminSaveCup = async function() { const title = document.getElementById('edit-cup-title').value.trim(); const icon = document.getElementById('edit-cup-icon').value.trim(); if(!title) return window.showAlert('월드컵 제목을 입력해주세요.'); editingCup.title = title; editingCup.icon = icon || '🏆'; try { await saveCupToDb(editingCup); window.showAlert('저장되었습니다!'); window.goAdmin(); } catch (e) { window.showAlert(e.message); } };
+        window.adminShowItemModal = function(itemId = null) { document.getElementById('admin-item-modal').classList.remove('hidden'); if (itemId) { document.getElementById('admin-item-modal-title').innerText = '항목 수정'; const item = editingCup.items.find(i => i.id == itemId); document.getElementById('admin-item-id').value = item.id; document.getElementById('admin-item-name').value = item.name || ''; document.getElementById('admin-item-date').value = item.date || ''; document.getElementById('admin-item-source').value = item.sourceUrl || ''; document.getElementById('admin-item-media').value = item.mediaUrl || ''; } else { document.getElementById('admin-item-modal-title').innerText = '새 항목 추가'; document.getElementById('admin-item-id').value = ''; document.getElementById('admin-item-name').value = ''; document.getElementById('admin-item-date').value = ''; document.getElementById('admin-item-source').value = ''; document.getElementById('admin-item-media').value = ''; } };
         window.closeAdminItemModal = function() { document.getElementById('admin-item-modal').classList.add('hidden'); };
-
-        window.saveAdminItem = async function() {
-            const id = document.getElementById('admin-item-id').value;
-            const name = document.getElementById('admin-item-name').value.trim();
-            const date = document.getElementById('admin-item-date').value.trim();
-            const sourceUrl = document.getElementById('admin-item-source').value.trim();
-            const mediaUrl = document.getElementById('admin-item-media').value.trim();
-
-            if (!name) return window.showAlert('후보 이름을 입력해주세요.');
-
-            const itemData = {
-                id: id ? parseInt(id) : Date.now(),
-                name, date, sourceUrl, mediaUrl,
-                isVideo: mediaUrl ? mediaUrl.endsWith('.mp4') : false,
-                winCount: id ? (editingCup.items.find(i => i.id == parseInt(id))?.winCount || 0) : 0
-            };
-
-            if (id) {
-                const idx = editingCup.items.findIndex(i => i.id == parseInt(id));
-                if(idx > -1) editingCup.items[idx] = itemData;
-            } else { editingCup.items.push(itemData); }
-
-            window.closeAdminItemModal();
-            window.renderAdminEdit();
-            try { await saveCupToDb(editingCup); } catch(e) {}
-        };
-
-        window.adminShowBulkModal = function() {
-            document.getElementById('admin-bulk-text').value = '';
-            document.getElementById('admin-bulk-modal').classList.remove('hidden');
-        };
-
+        window.saveAdminItem = async function() { const id = document.getElementById('admin-item-id').value; const name = document.getElementById('admin-item-name').value.trim(); const date = document.getElementById('admin-item-date').value.trim(); const sourceUrl = document.getElementById('admin-item-source').value.trim(); const mediaUrl = document.getElementById('admin-item-media').value.trim(); if (!name) return window.showAlert('후보 이름을 입력해주세요.'); const itemData = { id: id ? parseInt(id) : Date.now(), name, date, sourceUrl, mediaUrl, isVideo: mediaUrl ? mediaUrl.endsWith('.mp4') : false, winCount: id ? (editingCup.items.find(i => i.id == parseInt(id))?.winCount || 0) : 0 }; if (id) { const idx = editingCup.items.findIndex(i => i.id == parseInt(id)); if(idx > -1) editingCup.items[idx] = itemData; } else { editingCup.items.push(itemData); } window.closeAdminItemModal(); window.renderAdminEdit(); try { await saveCupToDb(editingCup); } catch(e) {} };
+        window.adminShowBulkModal = function() { document.getElementById('admin-bulk-text').value = ''; document.getElementById('admin-bulk-modal').classList.remove('hidden'); };
         window.closeAdminBulkModal = function() { document.getElementById('admin-bulk-modal').classList.add('hidden'); };
-
-        window.processAdminBulk = async function() {
-            const text = document.getElementById('admin-bulk-text').value.trim();
-            if (!text) return window.showAlert('텍스트가 없습니다.');
-
-            const blocks = text.split(/\n\s*\n/);
-            let addedCount = 0;
-            
-            blocks.forEach((block, index) => {
-                const lines = block.split('\n').map(line => line.trim()).filter(line => line !== '');
-                if (lines.length >= 1) {
-                    editingCup.items.push({
-                        id: Date.now() + index,
-                        name: lines[0],
-                        date: '',
-                        sourceUrl: lines[1] || '', 
-                        mediaUrl: '',
-                        isVideo: false,
-                        winCount: 0
-                    });
-                    addedCount++;
-                }
-            });
-
-            if(addedCount > 0) {
-                window.closeAdminBulkModal();
-                window.renderAdminEdit();
-                try { 
-                    await saveCupToDb(editingCup); 
-                    window.showAlert(`${addedCount}개 추가됨.`);
-                } catch(e) { window.showAlert(e.message); }
-            } else {
-                window.showAlert('입력 형식을 확인해주세요.');
-            }
-        };
+        window.processAdminBulk = async function() { const text = document.getElementById('admin-bulk-text').value.trim(); if (!text) return window.showAlert('텍스트가 없습니다.'); const blocks = text.split(/\n\s*\n/); let addedCount = 0; blocks.forEach((block, index) => { const lines = block.split('\n').map(line => line.trim()).filter(line => line !== ''); if (lines.length >= 1) { editingCup.items.push({ id: Date.now() + index, name: lines[0], date: '', sourceUrl: lines[1] || '', mediaUrl: '', isVideo: false, winCount: 0 }); addedCount++; } }); if(addedCount > 0) { window.closeAdminBulkModal(); window.renderAdminEdit(); try { await saveCupToDb(editingCup); window.showAlert(`${addedCount}개 추가됨.`); } catch(e) { window.showAlert(e.message); } } else { window.showAlert('입력 형식을 확인해주세요.'); } };
 
         initFirebase();
     </script>
 </body>
 </html>
+
