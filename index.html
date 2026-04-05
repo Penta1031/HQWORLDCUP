@@ -57,7 +57,6 @@
         </div>
     </main>
 
-    <!-- 이용 가이드 모달 -->
     <div id="guide-modal" class="fixed inset-0 bg-black/50 z-[400] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[24px] p-6 w-full max-w-[300px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="guide-content">
             <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
@@ -76,7 +75,6 @@
         </div>
     </div>
 
-    <!-- 자체 제작 알림창 (Alert) -->
     <div id="custom-alert-modal" class="fixed inset-0 bg-black/50 z-[300] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-alert-content">
             <p id="custom-alert-message" class="text-gray-800 font-bold mb-5 whitespace-pre-wrap leading-relaxed text-[14px]"></p>
@@ -84,7 +82,6 @@
         </div>
     </div>
 
-    <!-- 자체 제작 확인창 (Confirm) -->
     <div id="custom-confirm-modal" class="fixed inset-0 bg-black/50 z-[300] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-confirm-content">
             <p id="custom-confirm-message" class="text-gray-800 font-bold mb-5 whitespace-pre-wrap leading-relaxed text-[14px]"></p>
@@ -95,7 +92,6 @@
         </div>
     </div>
 
-    <!-- 자체 제작 비밀번호 입력창 (Prompt) -->
     <div id="custom-prompt-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-prompt-content">
             <h3 class="text-gray-800 font-bold mb-3 text-[14px]">관리자 비밀번호 입력</h3>
@@ -107,7 +103,6 @@
         </div>
     </div>
 
-    <!-- 랭킹 모달 -->
     <div id="ranking-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-end justify-center">
         <div class="bg-white rounded-t-[24px] w-full max-w-md p-5 shadow-2xl transform translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col" id="ranking-modal-content">
             <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
@@ -120,7 +115,6 @@
         </div>
     </div>
 
-    <!-- 몇 강 선택 모달 -->
     <div id="bracket-modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl transform scale-95 opacity-0 transition-all duration-200" id="bracket-modal-content">
             <div class="text-center mb-5">
@@ -132,7 +126,6 @@
         </div>
     </div>
 
-    <!-- 풀 미디어 모달 -->
     <div id="media-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 fade-in" onclick="window.closeFullMedia()">
         <button class="absolute top-4 right-4 text-white hover:text-gray-300 z-[210] p-2" onclick="window.closeFullMedia()">
             <i class="fa-solid fa-xmark text-2xl"></i>
@@ -140,7 +133,6 @@
         <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()"></div>
     </div>
 
-    <!-- 관리자용 모달: 항목 추가/수정 -->
     <div id="admin-item-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[300px] shadow-2xl">
             <h3 class="text-[15px] font-bold text-gray-900 mb-4" id="admin-item-modal-title">항목 추가</h3>
@@ -170,7 +162,6 @@
         </div>
     </div>
 
-    <!-- 관리자용 모달: 대량 추가 -->
     <div id="admin-bulk-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[320px] shadow-2xl">
             <h3 class="text-[15px] font-bold text-gray-900 mb-2">대량 항목 추가</h3>
@@ -394,7 +385,7 @@
             const appContent = document.getElementById('app-content');
             let html = `
             <div class="px-4 pt-6 pb-2 fade-in flex justify-between items-center">
-                <a href="https://hq-record.netlify.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600 transition-colors">
+                <a href="https://hq-record.vercel.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-1.5 text-[11px]"></i> 메인으로
                 </a>
                 <button onclick="window.openGuide()" class="text-gray-400 font-medium text-[12px] hover:text-blue-500 transition-colors">
@@ -760,4 +751,3 @@
     </script>
 </body>
 </html>
-
