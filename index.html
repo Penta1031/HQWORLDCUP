@@ -58,15 +58,14 @@
 
     <div id="guide-modal" class="fixed inset-0 bg-black/50 z-[400] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[24px] p-6 w-full max-w-[300px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="guide-content">
-            <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
-                <i class="fa-solid fa-circle-info"></i>
-            </div>
+            <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl"><i class="fa-solid fa-circle-info"></i></div>
             <h3 class="font-black text-gray-900 mb-3 text-[16px]">이용 가이드</h3>
             <div class="text-left space-y-3 text-[13px] text-gray-600 leading-relaxed mb-6">
-                <p>1. 테마 선택 후 진행할 라운드를 고르세요.</p>
-                <p>2. 두 후보 중 마음에 드는 쪽을 클릭하세요.</p>
-                <p>3. 이미지를 클릭하면 크게 볼 수 있습니다.</p>
-                <p>4. <b>랭킹에서도 항목을 누르면 떡밥 확인이 가능합니다.</b></p>
+                <p>1. 원하는 테마의 월드컵을 선택하세요.</p>
+                <p>2. 진행할 라운드(강수)를 선택합니다.</p>
+                <p>3. 두 후보 중 더 마음에 드는 쪽을 클릭하세요.</p>
+                <p>4. 이미지를 클릭하면 떡밥을 크게 볼 수 있습니다.</p>
+                <p>5. 랭킹에서 항목을 누르면 떡밥 확인이 가능합니다.</p>
             </div>
             <button onclick="window.closeGuide()" class="w-full py-3 bg-blue-500 text-white font-bold rounded-xl text-[13px]">확인했어요</button>
         </div>
@@ -91,8 +90,8 @@
 
     <div id="custom-prompt-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[20px] p-5 w-full max-w-[280px] shadow-2xl text-center transform scale-95 opacity-0 transition-all duration-200" id="custom-prompt-content">
-            <h3 class="text-gray-800 font-bold mb-3 text-[14px]">관리자 비밀번호</h3>
-            <input type="password" id="admin-password-input" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-[13px] text-center mb-4 focus:outline-none focus:border-blue-400">
+            <h3 class="text-gray-800 font-bold mb-3 text-[14px]">관리자 비밀번호 입력</h3>
+            <input type="password" id="admin-password-input" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-[13px] text-center mb-4 focus:outline-none focus:border-blue-400 transition-colors" placeholder="비밀번호">
             <div class="flex gap-2">
                 <button onclick="window.closeCustomPrompt(false)" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
                 <button onclick="window.closeCustomPrompt(true)" class="flex-1 py-2.5 bg-blue-500 text-white font-bold rounded-xl text-[13px]">확인</button>
@@ -107,7 +106,7 @@
                 <h3 class="text-lg font-bold text-gray-900" id="ranking-modal-title">우승 랭킹</h3>
                 <button onclick="window.closeRankingModal()" class="text-gray-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-[10px] text-gray-400 mb-4">※ 목록을 누르면 떡밥 확인이 가능합니다.</p>
+            <p class="text-[10px] text-gray-400 mb-4 font-medium">※ 목록을 누르면 떡밥 확인이 가능합니다.</p>
             <div id="ranking-list" class="overflow-y-auto flex-grow hide-scrollbar space-y-2 pb-6"></div>
         </div>
     </div>
@@ -119,32 +118,15 @@
                 <p class="text-xs text-gray-400">진행할 강수를 선택하세요.</p>
             </div>
             <div class="grid grid-cols-2 gap-2" id="bracket-options"></div>
-            <button onclick="window.closeBracketModal()" class="mt-4 w-full py-2.5 bg-gray-50 text-gray-500 font-bold rounded-xl text-[13px]">취소</button>
+            <button onclick="window.closeBracketModal()" class="mt-4 w-full py-2.5 bg-gray-50 text-gray-500 font-bold rounded-xl hover:bg-gray-100 transition-colors text-[13px]">취소</button>
         </div>
     </div>
 
     <div id="media-modal" class="fixed inset-0 bg-black/90 z-[500] hidden flex items-center justify-center p-4 fade-in" onclick="window.closeFullMedia()">
-        <button class="absolute top-4 right-4 text-white p-2" onclick="window.closeFullMedia()">
+        <button class="absolute top-4 right-4 text-white hover:text-gray-300 z-[510] p-2" onclick="window.closeFullMedia()">
             <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
-        <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center" onclick="event.stopPropagation()"></div>
-    </div>
-
-    <div id="admin-item-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[20px] p-5 w-full max-w-[300px] shadow-2xl">
-            <h3 class="text-[15px] font-bold text-gray-900 mb-4" id="admin-item-modal-title">항목 추가</h3>
-            <input type="hidden" id="admin-item-id">
-            <div class="space-y-3">
-                <input type="text" id="admin-item-name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px]" placeholder="후보 이름">
-                <input type="text" id="admin-item-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px]" placeholder="날짜 (선택)">
-                <input type="text" id="admin-item-source" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px]" placeholder="X(트위터) 링크">
-                <input type="text" id="admin-item-media" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[13px]" placeholder="직접 이미지 주소 (선택)">
-            </div>
-            <div class="flex gap-2 mt-5">
-                <button onclick="window.closeAdminItemModal()" class="flex-1 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl text-[13px]">취소</button>
-                <button onclick="window.saveAdminItem()" class="flex-1 py-2 bg-blue-500 text-white font-bold rounded-xl text-[13px]">저장</button>
-            </div>
-        </div>
+        <div id="media-modal-content" class="w-full max-w-2xl max-h-[90vh] flex items-center justify-center relative" onclick="event.stopPropagation()"></div>
     </div>
 
     <script type="module">
@@ -170,10 +152,9 @@
         let winner = null;
         let isTransitioning = false;
         let isDbLoaded = false;
-        let editingCup = null; 
         let db, auth, cupsCollectionRef;
 
-        // --- 공유 및 딥링크 로직 ---
+        // --- SNS 공유 및 딥링크 ---
         function getShareUrl(cupId, winnerId) {
             const url = new URL(window.location.origin + window.location.pathname);
             url.searchParams.set('cupId', cupId);
@@ -183,9 +164,7 @@
 
         window.copyUrl = function(cupId, winnerId) {
             const url = getShareUrl(cupId, winnerId);
-            navigator.clipboard.writeText(url).then(() => {
-                window.showAlert('우승 결과 링크가 복사되었습니다!');
-            });
+            navigator.clipboard.writeText(url).then(() => { window.showAlert('우승 결과 링크가 복사되었습니다!'); });
         };
 
         window.shareToX = function(cupTitle, winnerName, cupId, winnerId) {
@@ -197,31 +176,20 @@
 
         window.shareNative = async function(cupTitle, winnerName, cupId, winnerId) {
             const url = getShareUrl(cupId, winnerId);
-            const shareData = {
-                title: `${cupTitle} 결과`,
-                text: `🏆 나의 ${cupTitle} 우승 떡밥은 [ ${winnerName} ].ᐟ`,
-                url: url
-            };
-            if (navigator.share) {
-                try { await navigator.share(shareData); } catch (e) {}
-            } else {
-                window.copyUrl(cupId, winnerId);
-            }
+            const shareData = { title: `${cupTitle} 결과`, text: `🏆 나의 ${cupTitle} 우승 떡밥은 [ ${winnerName} ].ᐟ`, url: url };
+            if (navigator.share) { try { await navigator.share(shareData); } catch (e) {} } 
+            else { window.copyUrl(cupId, winnerId); }
         };
 
         function checkDeepLink() {
             const params = new URLSearchParams(window.location.search);
-            const cupId = params.get('cupId');
-            const winnerId = params.get('winnerId');
-
+            const cupId = params.get('cupId'), winnerId = params.get('winnerId');
             if (cupId && winnerId) {
                 const cup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
                 if (cup) {
                     const foundWinner = cup.items.find(i => i.id == winnerId);
                     if (foundWinner) {
-                        winner = foundWinner;
-                        selectedCup = cup;
-                        currentView = 'result';
+                        winner = foundWinner; selectedCup = cup; currentView = 'result';
                         window.render();
                         window.history.replaceState({}, '', window.location.pathname);
                     }
@@ -229,107 +197,25 @@
             }
         }
 
-        // --- UI 기본 유틸리티 ---
-        window.showAlert = function(msg) {
-            document.getElementById('custom-alert-message').innerText = msg;
-            const modal = document.getElementById('custom-alert-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => document.getElementById('custom-alert-content').classList.replace('opacity-0', 'opacity-100'), 10);
-        };
-        window.closeCustomAlert = function() {
-            const content = document.getElementById('custom-alert-content');
-            content.classList.replace('opacity-100', 'opacity-0');
-            setTimeout(() => document.getElementById('custom-alert-modal').classList.add('hidden'), 200);
-        };
-        
-        let confirmCallback = null;
-        window.showConfirm = function(msg, callback) {
-            document.getElementById('custom-confirm-message').innerText = msg;
-            confirmCallback = callback;
-            document.getElementById('custom-confirm-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('custom-confirm-content').classList.replace('opacity-0', 'opacity-100'), 10);
-        };
-        window.closeCustomConfirm = function(result) {
-            document.getElementById('custom-confirm-content').classList.replace('opacity-100', 'opacity-0');
-            setTimeout(() => {
-                document.getElementById('custom-confirm-modal').classList.add('hidden');
-                if (confirmCallback) confirmCallback(result);
-                confirmCallback = null;
-            }, 200);
-        };
-
-        window.openGuide = function() {
-            document.getElementById('guide-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('guide-content').classList.replace('opacity-0', 'opacity-100'), 10);
-        };
-        window.closeGuide = function() {
-            document.getElementById('guide-content').classList.replace('opacity-100', 'opacity-0');
-            setTimeout(() => document.getElementById('guide-modal').classList.add('hidden'), 200);
-        };
-
-        window.goAdmin = function() { 
-            document.getElementById('admin-password-input').value = '';
-            document.getElementById('custom-prompt-modal').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('custom-prompt-content').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('admin-password-input').focus();
-            }, 10);
-        };
-        window.closeCustomPrompt = function(isConfirm) {
-            const pwd = document.getElementById('admin-password-input').value;
-            document.getElementById('custom-prompt-content').classList.replace('opacity-100', 'opacity-0');
-            setTimeout(() => {
-                document.getElementById('custom-prompt-modal').classList.add('hidden');
-                if (isConfirm) {
-                    if (pwd === '1028hqwc') { currentView = 'admin'; window.render(); }
-                    else { window.showAlert('비밀번호 불일치'); }
+        // --- 데이터 처리 ---
+        async function updateWinCount(targetWinner) {
+            let targetCupId = selectedCup.id === 'all' ? targetWinner.originalCupId : selectedCup.id;
+            const cupIdx = WORLD_CUPS.findIndex(c => c.id == targetCupId);
+            if(cupIdx > -1) {
+                const itemIdx = WORLD_CUPS[cupIdx].items.findIndex(i => i.id == targetWinner.id);
+                if(itemIdx > -1) {
+                    WORLD_CUPS[cupIdx].items[itemIdx].winCount = (WORLD_CUPS[cupIdx].items[itemIdx].winCount || 0) + 1;
+                    try { await setDoc(doc(cupsCollectionRef, WORLD_CUPS[cupIdx].id.toString()), WORLD_CUPS[cupIdx]); } catch(e){}
                 }
-            }, 200);
-        };
-
-        // --- Firebase 연동 ---
-        async function initFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                cupsCollectionRef = collection(db, 'worldcups');
-                await signInAnonymously(auth);
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        onSnapshot(cupsCollectionRef, (snapshot) => {
-                            const loadedCups = [];
-                            snapshot.forEach((doc) => loadedCups.push(doc.data()));
-                            loadedCups.sort((a, b) => a.id - b.id);
-                            WORLD_CUPS = loadedCups;
-                            isDbLoaded = true;
-
-                            const params = new URLSearchParams(window.location.search);
-                            if (params.get('winnerId')) { checkDeepLink(); } 
-                            else if (currentView !== 'admin-edit') { window.render(); }
-                        });
-                    }
-                });
-            } catch(e) { console.error(e); }
+            }
         }
 
-        async function saveCupToDb(cup) {
-            await setDoc(doc(cupsCollectionRef, cup.id.toString()), cup);
-        }
-
-        function getUnifiedCup() {
-            let allItems = [];
-            WORLD_CUPS.forEach(cup => {
-                cup.items.forEach(item => { allItems.push({ ...item, originalCupId: cup.id }); });
-            });
-            return { id: 'all', title: '🦊 혚쾌 월드컵 🐰', icon: '❣️', items: allItems };
-        }
-
-        // --- 메인 렌더링 함수 ---
+        // --- 코어 렌더링 ---
         window.render = function() {
             if (!isDbLoaded) return;
             const mainHeader = document.getElementById('main-header');
             const headerTitle = document.getElementById('header-title');
+            const appContent = document.getElementById('app-content');
             
             if (currentView === 'home') {
                 mainHeader.style.display = 'none';
@@ -342,14 +228,6 @@
                 mainHeader.style.display = 'flex';
                 headerTitle.innerText = "최종 결과";
                 window.renderResult();
-            } else if (currentView === 'admin') {
-                mainHeader.style.display = 'flex';
-                headerTitle.innerText = "관리자";
-                window.renderAdmin();
-            } else if (currentView === 'admin-edit') {
-                mainHeader.style.display = 'flex';
-                headerTitle.innerText = "항목 편집";
-                window.renderAdminEdit();
             }
         };
 
@@ -360,78 +238,69 @@
                 <a href="https://hq-record.vercel.app/" class="inline-flex items-center text-gray-400 font-medium text-[13px] hover:text-gray-600">
                     <i class="fa-solid fa-arrow-left mr-1.5 text-[11px]"></i> 메인으로
                 </a>
-                <div class="flex gap-3">
-                    <button onclick="window.openGuide()" class="text-gray-400 font-medium text-[12px] hover:text-blue-500">
-                        <i class="fa-solid fa-circle-question mr-1"></i> 가이드
-                    </button>
-                </div>
+                <button onclick="window.openGuide()" class="text-gray-400 font-medium text-[12px] hover:text-blue-500">
+                    <i class="fa-solid fa-circle-question mr-1"></i> 가이드
+                </button>
             </div>
             <div class="px-4 pt-4 pb-10 fade-in">
-                <div class="text-center mb-8 mt-2"><h2 class="text-[22px] font-black tracking-tight text-gray-900">혚쾌 월드컵</h2></div>
+                <div class="text-center mb-8 mt-2"><h2 class="text-[22px] font-black tracking-tight text-gray-900 drop-shadow-sm">혚쾌 월드컵</h2></div>
                 <div class="flex flex-col gap-3">`;
 
             const unifiedCup = getUnifiedCup();
-            const allCupsToRender = [];
-            if (unifiedCup.items.length >= 4) allCupsToRender.push(unifiedCup);
-            allCupsToRender.push(...WORLD_CUPS);
+            const allCupsToRender = (unifiedCup.items.length >= 4) ? [unifiedCup, ...WORLD_CUPS] : WORLD_CUPS;
 
             allCupsToRender.forEach(cup => {
                 html += `
                 <div class="bg-white/70 backdrop-blur-md rounded-[20px] p-4 card-shadow border border-white/80">
                     <div class="flex items-center mb-3 cursor-pointer" onclick="window.showBracketModal('${cup.id}')">
-                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-lg mr-3 border border-gray-100 shadow-sm">${cup.icon}</div>
+                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-lg mr-3 border border-gray-100 shadow-sm shrink-0">${cup.icon}</div>
                         <div class="flex-grow text-left min-w-0">
                             <h3 class="font-bold text-gray-800 text-[14px] truncate">${cup.title}</h3>
                             <p class="text-[11px] text-gray-400">후보 <span class="font-bold text-blue-500">${cup.items.length}</span>개</p>
                         </div>
-                        <div class="text-blue-500 text-xs pl-2"><i class="fa-solid fa-play"></i></div>
+                        <div class="text-blue-500 text-xs pl-2 shrink-0"><i class="fa-solid fa-play"></i></div>
                     </div>
                     <button onclick="window.openRanking('${cup.id}')" class="w-full py-2 bg-gray-50/80 hover:bg-blue-50 text-gray-400 hover:text-blue-500 font-bold rounded-xl text-[11px] transition-colors flex items-center justify-center gap-1.5 border border-gray-50">
                         <i class="fa-solid fa-crown text-[10px]"></i> 랭킹 보기
                     </button>
                 </div>`;
             });
-
-            html += `</div>
-                <div class="text-center mt-8"><button onclick="window.goAdmin()" class="text-[10px] font-bold text-gray-300 hover:text-gray-400"><i class="fa-solid fa-gear mr-1"></i> 관리자</button></div>
-            </div>`;
+            html += `</div><div class="text-center mt-8"><button onclick="window.goAdmin()" class="text-[10px] font-bold text-gray-300 hover:text-gray-400 bg-transparent"><i class="fa-solid fa-gear mr-1"></i> 관리자</button></div></div>`;
             appContent.innerHTML = html;
         };
 
-        // --- 게임 로직 ---
-        window.startCup = function(cupId, size) {
-            window.closeBracketModal();
-            selectedCup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
-            const allItems = [...selectedCup.items].sort(() => Math.random() - 0.5);
-            roundItems = allItems.slice(0, size);
-            nextRoundItems = []; 
-            matchIndex = 0; 
-            currentView = 'game';
-            window.render();
-        };
-
+        // --- 게임 진행 및 부전승 처리 ---
         window.renderGame = function() {
             const appContent = document.getElementById('app-content');
-            if (!selectedCup || roundItems.length === 0) return;
             const totalInRound = roundItems.length;
             const currentRoundTitle = totalInRound === 2 ? '결승전' : `${totalInRound}강`;
             
+            // 라운드 종료 체크 및 다음 라운드 전환
             if (matchIndex >= totalInRound) {
-                 roundItems = [...nextRoundItems];
-                 nextRoundItems = [];
-                 matchIndex = 0;
-                 window.render();
-                 return;
+                roundItems = [...nextRoundItems];
+                nextRoundItems = [];
+                matchIndex = 0;
+                if (roundItems.length === 1) { 
+                    winner = roundItems[0]; currentView = 'result'; updateWinCount(winner); 
+                }
+                window.render();
+                return;
             }
 
+            // 부전승 상황 체크 (홀수 번째 마지막 후보)
             if (matchIndex === totalInRound - 1) {
                 const byeItem = roundItems[matchIndex];
-                appContent.innerHTML = `<div class="px-4 pt-10 pb-6 fade-in h-full flex flex-col items-center justify-center text-center"><div class="w-16 h-16 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mb-6 text-2xl"><i class="fa-solid fa-bolt"></i></div><h2 class="text-xl font-black text-gray-900 mb-2">부전승 발생!</h2><p class="text-gray-400 text-[13px] mb-8">대진 인원이 홀수여서 <b>${byeItem.name}</b>이 진출합니다.</p><button onclick="window.handleBye('${byeItem.id}')" class="w-full max-w-[200px] py-4 bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-200">다음 라운드 이동</button></div>`;
+                appContent.innerHTML = `
+                    <div class="px-4 pt-10 pb-6 fade-in h-full flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mb-6 text-2xl shadow-sm"><i class="fa-solid fa-bolt"></i></div>
+                        <h2 class="text-xl font-black text-gray-900 mb-2">부전승 발생!</h2>
+                        <p class="text-gray-400 text-[13px] mb-8 leading-relaxed">대진 인원이 홀수여서<br><b>${byeItem.name}</b>이(가) 자동으로 다음 라운드 진출!</p>
+                        <button onclick="window.handleBye('${byeItem.id}')" class="w-full max-w-[200px] py-4 bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-200">다음 라운드 이동</button>
+                    </div>`;
                 return;
             }
 
             const item1 = roundItems[matchIndex], item2 = roundItems[matchIndex + 1];
-
             appContent.innerHTML = `
                 <div class="px-4 pt-4 pb-6 fade-in h-full flex flex-col">
                     <div class="text-center mb-6">
@@ -443,54 +312,49 @@
                         <div onclick="window.showGameMedia('${item2.id}')" id="img-card-${item2.id}" class="select-transition flex-1 h-full bg-gray-50 rounded-[16px] overflow-hidden cursor-pointer relative border border-gray-100">${getMediaInnerHtml(item2)}</div>
                     </div>
                     <div class="flex flex-col gap-2.5 mt-auto">
-                        <button onclick="window.handlePick('${item1.id}')" id="btn-${item1.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center">
-                            <span class="font-bold text-gray-800 text-[14px] truncate pr-2">${item1.name}</span>
-                            <span class="text-[10px] text-gray-300">${item1.date || ''}</span>
-                        </button>
-                        <button onclick="window.handlePick('${item2.id}')" id="btn-${item2.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center">
-                            <span class="font-bold text-gray-800 text-[14px] truncate pr-2">${item2.name}</span>
-                            <span class="text-[10px] text-gray-300">${item2.date || ''}</span>
-                        </button>
+                        <button onclick="window.handlePick('${item1.id}')" id="btn-${item1.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center"><span class="font-bold text-gray-800 text-[14px] truncate pr-2">${item1.name}</span><span class="text-[10px] text-gray-300 shrink-0">${item1.date || ''}</span></button>
+                        <button onclick="window.handlePick('${item2.id}')" id="btn-${item2.id}" class="select-transition w-full bg-white rounded-[16px] p-3.5 text-left card-shadow border border-white flex justify-between items-center"><span class="font-bold text-gray-800 text-[14px] truncate pr-2">${item2.name}</span><span class="text-[10px] text-gray-300 shrink-0">${item2.date || ''}</span></button>
                     </div>
                 </div>`;
             loadMediaIfNeeded(item1, `img-card-${item1.id}`);
             loadMediaIfNeeded(item2, `img-card-${item2.id}`);
         };
 
-        window.handlePick = async function(itemId) {
+        window.handlePick = function(itemId) {
             if (isTransitioning) return;
             isTransitioning = true;
             const sel = roundItems.find(i => i.id == itemId);
-            const other = roundItems.find(i => i.id != itemId && (i === roundItems[matchIndex] || i === roundItems[matchIndex+1]));
+            const other = roundItems[matchIndex].id === itemId ? roundItems[matchIndex+1] : roundItems[matchIndex];
 
             document.getElementById(`img-card-${sel.id}`).classList.add('selected-item');
             document.getElementById(`btn-${sel.id}`).classList.add('selected-item');
             document.getElementById(`img-card-${other.id}`).classList.add('unselected-item');
             document.getElementById(`btn-${other.id}`).classList.add('unselected-item');
 
-            setTimeout(async () => {
+            setTimeout(() => {
                 nextRoundItems.push(sel);
-                if (matchIndex + 2 >= roundItems.length) {
-                    if (nextRoundItems.length === 1) {
-                        winner = nextRoundItems[0];
-                        currentView = 'result';
-                        let targetCupId = selectedCup.id === 'all' ? winner.originalCupId : selectedCup.id;
-                        const cupIdx = WORLD_CUPS.findIndex(c => c.id == targetCupId);
-                        if(cupIdx > -1) {
-                            const itemIdx = WORLD_CUPS[cupIdx].items.findIndex(i => i.id == winner.id);
-                            if(itemIdx > -1) {
-                                WORLD_CUPS[cupIdx].items[itemIdx].winCount = (WORLD_CUPS[cupIdx].items[itemIdx].winCount || 0) + 1;
-                                try { await saveCupToDb(WORLD_CUPS[cupIdx]); } catch(e){}
-                            }
-                        }
-                    } else { roundItems = [...nextRoundItems]; nextRoundItems = []; matchIndex = 0; }
-                } else { matchIndex += 2; }
+                matchIndex += 2;
                 isTransitioning = false;
                 window.render();
             }, 400);
         };
 
-        // --- 결과 화면 및 공유 ---
+        window.handleBye = function(itemId) {
+            const sel = roundItems.find(i => i.id == itemId);
+            nextRoundItems.push(sel);
+            
+            // 부전승은 라운드의 마지막이므로 즉시 다음 라운드로 교체
+            roundItems = [...nextRoundItems];
+            nextRoundItems = [];
+            matchIndex = 0;
+
+            if (roundItems.length === 1) { 
+                winner = roundItems[0]; currentView = 'result'; updateWinCount(winner); 
+            }
+            window.render();
+        };
+
+        // --- 결과 화면 ---
         window.renderResult = function() {
             const cupTitle = selectedCup.title, winnerName = winner.name, cupId = selectedCup.id, winnerId = winner.id;
             document.getElementById('app-content').innerHTML = `
@@ -500,9 +364,11 @@
                     <h3 class="font-black text-[18px] text-gray-800 mb-1 px-4 leading-snug">${winnerName}</h3>
                     <p class="text-[12px] text-gray-400 mb-6">${cupTitle}</p>
                     <div class="flex justify-center gap-4 mt-2">
-                        <button onclick="window.shareToX('${cupTitle}', '${winnerName}', '${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-black text-white flex items-center justify-center shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 1200 1227"><path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z"/></svg></button>
-                        <button onclick="window.shareNative('${cupTitle}', '${winnerName}', '${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-sm"><i class="fa-solid fa-share-nodes text-lg"></i></button>
-                        <button onclick="window.copyUrl('${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shadow-sm"><i class="fa-solid fa-link text-lg"></i></button>
+                        <button onclick="window.shareToX('${cupTitle}', '${winnerName}', '${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-black text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 1200 1227"><path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z"/></svg>
+                        </button>
+                        <button onclick="window.shareNative('${cupTitle}', '${winnerName}', '${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform"><i class="fa-solid fa-share-nodes text-lg"></i></button>
+                        <button onclick="window.copyUrl('${cupId}', '${winnerId}')" class="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shadow-sm hover:scale-105 transition-transform"><i class="fa-solid fa-link text-lg"></i></button>
                     </div>
                     <div class="flex flex-col gap-2 mt-8">
                         <button onclick="window.showBracketModal('${cupId}')" class="w-full py-3 bg-white text-gray-800 font-bold rounded-[14px] border border-gray-200 text-[13px] shadow-sm">다시 하기</button>
@@ -511,19 +377,15 @@
                 </div>`;
         };
 
-        // --- 랭킹 및 미디어 팝업 핸들러 ---
+        // --- 랭킹 및 미디어 기능 ---
         window.openRanking = function(cupId) {
             const cup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
             const sortedItems = [...cup.items].sort((a, b) => (b.winCount || 0) - (a.winCount || 0));
             const listHtml = sortedItems.map((item, idx) => {
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
-                return `
-                <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-[14px] border border-gray-100/50 cursor-pointer hover:bg-blue-50 transition-colors"
-                     onclick="window.showRankingMedia('${cupId}', ${item.id})">
+                return `<div onclick="window.showRankingMedia('${cupId}', ${item.id})" class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-[14px] border border-gray-100/50 cursor-pointer hover:bg-blue-50 transition-colors">
                     <div class="w-6 font-black text-center text-gray-400 text-[12px]">${medal}</div>
-                    <div class="flex-grow min-w-0">
-                        <p class="font-bold text-gray-800 text-[12px] truncate">${item.name}</p>
-                    </div>
+                    <div class="flex-grow min-w-0"><p class="font-bold text-gray-800 text-[12px] truncate">${item.name}</p></div>
                     <div class="text-blue-500 font-black text-[12px] pr-2">${item.winCount || 0}승</div>
                 </div>`;
             }).join('');
@@ -532,35 +394,19 @@
             setTimeout(() => document.getElementById('ranking-modal-content').classList.remove('translate-y-full'), 10);
         };
 
-        // 랭킹에서 미디어 팝업 호출 (복구된 기능)
         window.showRankingMedia = async function(cupId, itemId) {
             const cup = cupId === 'all' ? getUnifiedCup() : WORLD_CUPS.find(c => c.id == cupId);
             const item = cup.items.find(i => i.id == itemId);
             if (!item) return;
-
-            // 미디어 로딩이 필요한 경우
-            if (!item.mediaUrl && item.sourceUrl) {
-                // 원하면 여기서 "로딩중" 얼럿을 띄울 수 있음
-                await loadMediaIfNeeded(item);
-            }
-
-            if (item.mediaUrl) {
-                window.showFullMedia(item.mediaUrl, item.isVideo);
-            } else if (item.sourceUrl) {
-                window.showAlert("미디어를 불러올 수 없습니다. 링크를 직접 확인해주세요.");
-            } else {
-                window.showAlert(`[텍스트 떡밥]\n\n${item.name}`);
-            }
+            if (!item.mediaUrl && item.sourceUrl) { await loadMediaIfNeeded(item); }
+            if (item.mediaUrl) { window.showFullMedia(item.mediaUrl, item.isVideo); } 
+            else if (item.sourceUrl) { window.showAlert("미디어를 불러올 수 없습니다."); }
+            else { window.showAlert(`[텍스트]\n\n${item.name}`); }
         };
 
-        window.closeRankingModal = function() {
-            document.getElementById('ranking-modal-content').classList.add('translate-y-full');
-            setTimeout(() => document.getElementById('ranking-modal').classList.add('hidden'), 300);
-        };
-
-        // --- 헬퍼 함수 (미디어 표시 등) ---
+        // --- 헬퍼 함수 ---
         function getMediaInnerHtml(item) {
-            if (!item.sourceUrl && !item.mediaUrl) { return `<div class="absolute inset-0 flex items-center justify-center bg-gray-100 p-4 text-center font-black text-[15px] text-gray-700">${item.name}</div>`; }
+            if (!item.sourceUrl && !item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-100 p-4 text-center font-black text-[15px] text-gray-700">${item.name}</div>`;
             if(!item.mediaUrl) return `<div class="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-300 text-[10px]"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>로딩중</div>`;
             if(item.isVideo) return `<video src="${item.mediaUrl}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>`;
             return `<img src="${item.mediaUrl}" class="absolute inset-0 w-full h-full object-cover" />`;
@@ -573,12 +419,8 @@
                 const res = await fetch(`https://api.vxtwitter.com${urlObj.pathname}`);
                 const data = await res.json();
                 if (data.mediaURLs?.length > 0) {
-                    item.mediaUrl = data.mediaURLs[0];
-                    item.isVideo = item.mediaUrl.endsWith('.mp4');
-                    if (containerId) {
-                        const container = document.getElementById(containerId);
-                        if (container) container.innerHTML = getMediaInnerHtml(item);
-                    }
+                    item.mediaUrl = data.mediaURLs[0]; item.isVideo = item.mediaUrl.endsWith('.mp4');
+                    if (containerId) { const container = document.getElementById(containerId); if (container) container.innerHTML = getMediaInnerHtml(item); }
                 }
             } catch (e) {}
         }
@@ -594,11 +436,7 @@
             setTimeout(() => document.getElementById('bracket-modal-content').classList.replace('opacity-0', 'opacity-100'), 10);
         };
         window.closeBracketModal = function() { document.getElementById('bracket-modal').classList.add('hidden'); };
-        
-        window.showGameMedia = function(itemId) {
-            const item = roundItems.find(i => i.id == itemId);
-            if(item && item.mediaUrl) window.showFullMedia(item.mediaUrl, item.isVideo);
-        };
+        window.showGameMedia = function(itemId) { const item = roundItems.find(i => i.id == itemId); if(item && item.mediaUrl) window.showFullMedia(item.mediaUrl, item.isVideo); };
         window.showResultMedia = function() { if (winner && winner.mediaUrl) window.showFullMedia(winner.mediaUrl, winner.isVideo); };
         window.showFullMedia = function(url, isV) {
             const content = document.getElementById('media-modal-content');
@@ -607,11 +445,25 @@
         };
         window.closeFullMedia = function() { document.getElementById('media-modal').classList.add('hidden'); };
         window.goHome = function() { currentView = 'home'; window.render(); };
+        window.closeRankingModal = function() { document.getElementById('ranking-modal-content').classList.add('translate-y-full'); setTimeout(() => document.getElementById('ranking-modal').classList.add('hidden'), 300); };
+        window.closeCustomAlert = function() { document.getElementById('custom-alert-content').classList.replace('opacity-100', 'opacity-0'); setTimeout(() => document.getElementById('custom-alert-modal').classList.add('hidden'), 200); };
+        window.closeCustomConfirm = function(res) { document.getElementById('custom-confirm-content').classList.replace('opacity-100', 'opacity-0'); setTimeout(() => { document.getElementById('custom-confirm-modal').classList.add('hidden'); if(confirmCallback) confirmCallback(res); confirmCallback=null; }, 200); };
 
-        // 관리자용 기능 유지
-        window.adminCreateCup = function() { editingCup = { id: Date.now(), title: '새 월드컵', icon: '🏆', items: [] }; currentView = 'admin-edit'; window.render(); };
-        window.adminEditCup = function(cupId) { const cup = WORLD_CUPS.find(c => c.id == cupId); editingCup = JSON.parse(JSON.stringify(cup)); currentView = 'admin-edit'; window.render(); };
+        function getUnifiedCup() {
+            let allItems = []; WORLD_CUPS.forEach(cup => { cup.items.forEach(item => { allItems.push({ ...item, originalCupId: cup.id }); }); });
+            return { id: 'all', title: '🦊 혚쾌 월드컵 🐰', icon: '❣️', items: allItems };
+        }
 
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); cupsCollectionRef = collection(db, 'worldcups');
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (user) => { if (user) { onSnapshot(cupsCollectionRef, (snap) => {
+                    const loaded = []; snap.forEach(d => loaded.push(d.data())); loaded.sort((a, b) => a.id - b.id); WORLD_CUPS = loaded; isDbLoaded = true;
+                    const params = new URLSearchParams(window.location.search); if (params.get('winnerId')) checkDeepLink(); else if (currentView !== 'admin-edit') window.render();
+                }); } });
+            } catch(e) {}
+        }
         initFirebase();
     </script>
 </body>
